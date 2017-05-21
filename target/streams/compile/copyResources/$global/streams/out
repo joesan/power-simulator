@@ -1,0 +1,7 @@
+[0m[[0mdebug[0m] [0mCopy resource mappings: [0m
+[0m[[0mdebug[0m] [0m	(/Users/jothi/Projects/Private/scala-projects/power-simulator/conf/application.conf,/Users/jothi/Projects/Private/scala-projects/power-simulator/target/scala-2.11/classes/application.conf)[0m
+[0m[[0mdebug[0m] [0m	(/Users/jothi/Projects/Private/scala-projects/power-simulator/conf/application.test.conf,/Users/jothi/Projects/Private/scala-projects/power-simulator/target/scala-2.11/classes/application.test.conf)[0m
+[0m[[0mdebug[0m] [0m	(/Users/jothi/Projects/Private/scala-projects/power-simulator/conf/logback.xml,/Users/jothi/Projects/Private/scala-projects/power-simulator/target/scala-2.11/classes/logback.xml)[0m
+[0m[[0mdebug[0m] [0m	(/Users/jothi/Projects/Private/scala-projects/power-simulator/conf/messages.en,/Users/jothi/Projects/Private/scala-projects/power-simulator/target/scala-2.11/classes/messages.en)[0m
+[0m[[0mdebug[0m] [0m	(/Users/jothi/Projects/Private/scala-projects/power-simulator/conf/messages.es,/Users/jothi/Projects/Private/scala-projects/power-simulator/target/scala-2.11/classes/messages.es)[0m
+[0m[[0mdebug[0m] [0m	(/Users/jothi/Projects/Private/scala-projects/power-simulator/conf/routes,/Users/jothi/Projects/Private/scala-projects/power-simulator/target/scala-2.11/classes/routes)[0m

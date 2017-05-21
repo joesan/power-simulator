@@ -16,6 +16,8 @@
 
 package com.inland24.crud.services.database
 
+import org.scalatest._
+
 
 class DBServiceSpec extends FlatSpec {
 
