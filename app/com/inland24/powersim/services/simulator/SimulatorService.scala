@@ -28,19 +28,19 @@ trait SimulatorService[T] {
 object SimulatorService {
 
   val intRandomValue = new SimulatorService[Int] {
-    val random = new Random()
+    val random = new Random(19)
     override def random(from: Int, within: Int): Int =
       from + random.nextInt((within - from) + 1)
   }
 
   val doubleRandomValue = new SimulatorService[Double] {
-    val random = new Random()
+    val random = new Random(31)
     override def random(from: Double, within: Double): Double =
       from + (random.nextDouble() * (within - from) )
   }
 
   val stringRandomValue = new SimulatorService[String] {
-    val rndm = new Random()
+    val rndm = new Random(2116)
     override def random(from: String, within: String): String = // TODO: make use of from and within
       rndm.nextString(from.length + within.length)
   }
