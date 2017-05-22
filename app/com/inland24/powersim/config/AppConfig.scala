@@ -26,7 +26,6 @@ import slick.jdbc.{JdbcBackend, JdbcProfile}
 import slick.jdbc.JdbcBackend.Database
 
 import scala.concurrent.duration._
-import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 
