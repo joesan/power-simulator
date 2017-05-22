@@ -53,6 +53,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.4.0",
   "org.scala-lang.modules" % "scala-async_2.11" % "0.9.6",
   "com.zaxxer" % "HikariCP" % "2.4.1",
+  "com.typesafe" % "config" % "1.3.1",
 
   // test
   "org.scalatest" %% "scalatest" % "3.0.1" % "test",
