@@ -27,7 +27,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 final class PowerPlantDBServiceSpec extends AsyncFlatSpec
   with DBServiceSpec with BeforeAndAfterAll {
 
-  override def beforeAll() = {
+  override def beforeAll(): Unit = {
     // 1. Set up the Schemas
     super.h2SchemaSetup()
 
@@ -35,7 +35,7 @@ final class PowerPlantDBServiceSpec extends AsyncFlatSpec
     super.populateTables()
   }
 
-  override def afterAll() = {
+  override def afterAll(): Unit = {
     super.h2SchemaDrop()
   }
 
@@ -49,11 +49,15 @@ final class PowerPlantDBServiceSpec extends AsyncFlatSpec
       allPowerPlants =>
         assert(allPowerPlants.length === 6)
 
-        val powerPlant1 = allPowerPlants.head
-        assert(powerPlant1.id === 101)
-        assert(powerPlant1.orgName === "joesan 1")
-        assert(powerPlant1.isActive)
-        assert(powerPlant1.powerPlantTyp === PowerPlantType.RampUpType)
+        allPowerPlants.headOption match {
+          case Some(powerPlant1) =>
+            assert(powerPlant1.id === 101)
+            assert(powerPlant1.orgName === "joesan 1")
+            assert(powerPlant1.isActive)
+            assert(powerPlant1.powerPlantTyp === PowerPlantType.RampUpType)
+          case None =>
+            fail("expected a PowerPlant with id 101 in the database, but not found")
+        }
     }
   }
 
@@ -80,7 +84,7 @@ final class PowerPlantDBServiceSpec extends AsyncFlatSpec
         assert(powerPlant.id === 106)
         assert(!powerPlant.isActive)
 
-      case _ => fail("expected the powerplant with id 106 to be inActive, but was active")
+      case _ => fail("expected the PowerPlant with id 106 to be inActive, but was active")
     }
   }
 
@@ -95,11 +99,15 @@ final class PowerPlantDBServiceSpec extends AsyncFlatSpec
       allPowerPlants =>
         assert(allPowerPlants.length === 5)
 
-        val powerPlant5 = allPowerPlants.last
-        assert(powerPlant5.id === 105)
-        assert(powerPlant5.orgName === "joesan 5")
-        assert(powerPlant5.isActive)
-        assert(powerPlant5.powerPlantTyp === PowerPlantType.RampUpType)
+        allPowerPlants.lastOption match {
+          case Some(powerPlant5) =>
+            assert(powerPlant5.id === 105)
+            assert(powerPlant5.orgName === "joesan 5")
+            assert(powerPlant5.isActive)
+            assert(powerPlant5.powerPlantTyp === PowerPlantType.RampUpType)
+          case _ =>
+            fail("expected a PowerPlant with id = 105 from the database, but not found")
+        }
     }
   }
 }
