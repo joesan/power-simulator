@@ -8,6 +8,8 @@ scalaVersion := "2.11.7"
 
 scalacOptions ++= Seq(
   // turns all warnings into errors ;-)
+  "-target:jvm-1.8",
+  "-language:reflectiveCalls",
   "-Xfatal-warnings",
   // possibly old/deprecated linter options
   "-unchecked",
@@ -41,8 +43,6 @@ scalacOptions ++= Seq(
 javacOptions ++= Seq(
   "-Xlint:unchecked", "-Xlint:deprecation"
 )
-
-scalacOptions += "-target:jvm-1.8"
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
