@@ -1,28 +1,32 @@
 /*
- * Copyright (c) 2017 joesan @ http://github.com/joesan
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  * Copyright (c) 2017 joesan @ http://github.com/joesan
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  *   http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
-package com.inland24.crud.services.database
+package com.inland24.powersim.services.database
 
 import java.sql.Timestamp
 
-import com.inland24.crud.services.database.models.{AddressRow, MeterRow, MeterType, OrganizationRow}
+import com.inland24.powersim.models.PowerPlantType
+import com.inland24.powersim.services.database.models.{AddressRow, PowerPlantRow}
 import org.joda.time.{DateTime, DateTimeZone}
 import slick.jdbc.JdbcProfile
 
 
+// This schema reads / maps the tables in our database
 final class DBSchema private (val driver: JdbcProfile) {
 
   import driver.api._
@@ -36,49 +40,62 @@ final class DBSchema private (val driver: JdbcProfile) {
   )
 
   /**
-    * Mapping for using MeterType conversions.
+    * Mapping for using PowerPlantType conversions.
     */
-  implicit def meterTypeMapping = MappedColumnType.base[MeterType, String](
-    meterType    => MeterType.toString(meterType),
-    meterTypeStr => MeterType.toMeterType(meterTypeStr)
+  implicit def meterTypeMapping = MappedColumnType.base[PowerPlantType, String](
+    powerPlantType    => PowerPlantType.toString(powerPlantType),
+    powerPlantTypeStr => PowerPlantType.fromString(powerPlantTypeStr)
   )
 
-  ///////////////// Organization Table
+  ///////////////// PowerPlant Table
   /**
-    * The Organization details are maintained in the organization table
+    * The Organization details are maintained in the PowerPlant table
     */
-  class OrganizationTable(tag: Tag) extends Table[OrganizationRow](tag, "organization") {
-    def id            = column[Int]("id", O.PrimaryKey, O.AutoInc)
-    def orgName       = column[String]("organizationName")
-    def orgAddressId  = column[Int]("organizationAddressId")
+  class PowerPlantTable(tag: Tag) extends Table[PowerPlantRow](tag, "PowerPlant") {
+    def id            = column[Int]("id", O.PrimaryKey)
+    def orgName       = column[String]("powerPlantName")
+    def orgAddressId  = column[Int]("powerPlantAddressId")
     def isActive      = column[Boolean]("isActive")
+    def minPower      = column[Double]("minPower")
+    def maxPower      = column[Double]("maxPower")
+    def powerPlantType= column[PowerPlantType]("powerPlantType")
     def createdAt     = column[DateTime]("created_at")
     def updatedAt     = column[DateTime]("updated_at")
 
     def * = {
-      (id, orgName, orgAddressId, isActive, createdAt, updatedAt) <>
-        (OrganizationRow.tupled, OrganizationRow.unapply)
+      (id, orgName, orgAddressId, isActive, minPower, maxPower, powerPlantType, createdAt, updatedAt) <>
+        (PowerPlantRow.tupled, PowerPlantRow.unapply)
     }
   }
 
-  object OrganizationTable {
+  object PowerPlantTable {
     /**
       * A TableQuery can be used for composing queries, inserts
       * and pretty much anything related to the sensors table.
       */
-    val all = TableQuery[OrganizationTable]
+    val all = TableQuery[PowerPlantTable]
 
     /**
       * Query to filter and fetch all active organizations
       */
-    val allActiveOrganizations = {
+    def activePowerPlants = {
       all.filter(_.isActive === true)
+    }
+
+    /**
+      * Query to de-activate a PowerPlant
+      * (i.e., to set the isActive flag to false)
+      */
+    def deActivatePowerPlant(id: Int) = {
+      all.filter(_.id === id)
+      .map(elem => elem.isActive)
+      .update(false)
     }
 
     /**
       * Query to filter and fetch organization by a given id
       */
-    val organizationById = (id: Int) => {
+    def powerPlantById(id: Int) = {
       all.filter(_.id === id)
     }
   }
@@ -87,8 +104,8 @@ final class DBSchema private (val driver: JdbcProfile) {
   /**
     * The Address details are maintained in the Address table
     */
-  class AddressTable(tag: Tag) extends Table[AddressRow](tag, "address") {
-    def id        = column[Int]("id", O.PrimaryKey, O.AutoInc)
+  class AddressTable(tag: Tag) extends Table[AddressRow](tag, "Address") {
+    def id        = column[Int]("id", O.PrimaryKey)
     def streetNum = column[Int]("streetNum")
     def street    = column[String]("street")
     def city      = column[String]("city")
@@ -105,31 +122,7 @@ final class DBSchema private (val driver: JdbcProfile) {
 
     val all = TableQuery[AddressTable]
 
-    val addressById = (id: Int) => {
-      all.filter(_.id === id)
-    }
-  }
-
-  ///////////////// Meter Table
-  /**
-    * The Meter details are maintained in the Meter table
-    */
-  class MeterTable(tag: Tag) extends Table[MeterRow](tag, "meter") {
-    def id        = column[String]("id", O.PrimaryKey, O.AutoInc)
-    def orgId     = column[Int]("streetNum")
-    def meterType = column[MeterType]("meterType")
-
-    def * = {
-      (id, orgId, meterType) <>
-        (MeterRow.tupled, MeterRow.unapply)
-    }
-  }
-
-  object MeterTable {
-
-    val all = TableQuery[MeterTable]
-
-    val meterById = (id: String) => {
+    def addressById(id: Int) = {
       all.filter(_.id === id)
     }
   }

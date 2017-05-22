@@ -7,8 +7,20 @@
 		revision="1.0-SNAPSHOT"
 		conf="compile"
 		confs="compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom, scala-tool"
-		date="20170520141421"/>
+		date="20170521192939"/>
 	<dependencies>
+		<module organisation="com.zaxxer" name="HikariCP">
+			<revision name="2.4.1" status="release" pubdate="20150821172514" resolver="public" artresolver="public" homepage="https://github.com/brettwooldridge/HikariCP" downloaded="true" searched="true" default="false" conf="default, compile, runtime, default(compile), master" position="77">
+				<license name="The Apache Software License, Version 2.0" url="http://www.apache.org/licenses/LICENSE-2.0.txt"/>
+				<metadata-artifact status="successful" details="" size="15955" time="186" location="/Users/jothi/.ivy2/cache/com.zaxxer/HikariCP/ivy-2.4.1.xml" searched="true" original-local-location="/Users/jothi/.ivy2/cache/com.zaxxer/HikariCP/ivy-2.4.1.xml.original" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/com/zaxxer/HikariCP/2.4.1/HikariCP-2.4.1.pom"/>
+				<caller organisation="play-scala-reactive-functional-crud" name="play-scala-reactive-functional-crud_2.11" conf="compile" rev="2.4.1" rev-constraint-default="2.4.1" rev-constraint-dynamic="2.4.1" callerrev="1.0-SNAPSHOT"/>
+				<artifacts>
+					<artifact name="HikariCP" type="bundle" ext="jar" status="successful" details="" size="125618" time="323" location="/Users/jothi/.ivy2/cache/com.zaxxer/HikariCP/bundles/HikariCP-2.4.1.jar">
+						<origin-location is-local="false" location="https://repo1.maven.org/maven2/com/zaxxer/HikariCP/2.4.1/HikariCP-2.4.1.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
 		<module organisation="org.scala-lang.modules" name="scala-async_2.11">
 			<revision name="0.9.6" status="release" pubdate="20161030001912" resolver="sbt-chain" artresolver="sbt-chain" homepage="http://github.com/scala/async" downloaded="false" searched="false" default="false" conf="default, compile, runtime, default(compile), master" position="76">
 				<license name="Scala license" url="https://github.com/scala/async/blob/master/LICENSE"/>
@@ -777,22 +789,29 @@
 			<revision name="1.7.21" status="release" pubdate="20160404203640" resolver="sbt-chain" artresolver="sbt-chain" homepage="http://www.slf4j.org" downloaded="false" searched="false" default="false" conf="compile, runtime(*), master(compile), runtime, compile(*), master" position="22">
 				<license name="MIT License" url="http://www.opensource.org/licenses/mit-license.php"/>
 				<metadata-artifact status="no" details="" size="5199" time="0" location="/Users/jothi/.ivy2/cache/org.slf4j/slf4j-api/ivy-1.7.21.xml" searched="false" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/org/slf4j/slf4j-api/1.7.21/slf4j-api-1.7.21.pom"/>
+				<caller organisation="com.zaxxer" name="HikariCP" conf="default, compile, runtime, master" rev="1.7.12" rev-constraint-default="1.7.12" rev-constraint-dynamic="1.7.12" callerrev="2.4.1"/>
 				<caller organisation="com.typesafe.akka" name="akka-slf4j_2.11" conf="compile, runtime" rev="1.7.16" rev-constraint-default="1.7.16" rev-constraint-dynamic="1.7.16" callerrev="2.4.10"/>
 				<caller organisation="org.asynchttpclient" name="netty-codec-dns" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="2.0.11"/>
 				<caller organisation="com.typesafe.play" name="play-netty-utils" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="2.5.9"/>
-				<caller organisation="org.slf4j" name="jcl-over-slf4j" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="1.7.21"/>
 				<caller organisation="org.slf4j" name="jul-to-slf4j" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="1.7.21"/>
-				<caller organisation="org.asynchttpclient" name="async-http-client" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="2.0.11"/>
 				<caller organisation="ch.qos.logback" name="logback-classic" conf="compile, runtime" rev="1.7.20" rev-constraint-default="1.7.20" rev-constraint-dynamic="1.7.20" callerrev="1.1.7"/>
 				<caller organisation="com.typesafe.scala-logging" name="scala-logging_2.11" conf="default, compile, runtime, master" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="3.4.0"/>
-				<caller organisation="com.typesafe.play" name="play_2.11" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="2.5.9"/>
 				<caller organisation="org.asynchttpclient" name="netty-resolver-dns" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="2.0.11"/>
-				<caller organisation="org.asynchttpclient" name="netty-resolver" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="2.0.11"/>
 				<caller organisation="com.typesafe.slick" name="slick_2.11" conf="default, compile, runtime, master" rev="1.7.18" rev-constraint-default="1.7.18" rev-constraint-dynamic="1.7.18" callerrev="3.2.0"/>
+				<caller organisation="org.slf4j" name="jcl-over-slf4j" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="1.7.21"/>
+				<caller organisation="org.asynchttpclient" name="async-http-client" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="2.0.11"/>
+				<caller organisation="com.typesafe.play" name="play_2.11" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="2.5.9"/>
+				<caller organisation="org.asynchttpclient" name="netty-resolver" conf="compile, runtime" rev="1.7.21" rev-constraint-default="1.7.21" rev-constraint-dynamic="1.7.21" callerrev="2.0.11"/>
 				<artifacts>
 					<artifact name="slf4j-api" type="jar" ext="jar" status="no" details="" size="41071" time="0" location="/Users/jothi/.ivy2/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.7.21.jar">
 						<origin-location is-local="false" location="https://repo1.maven.org/maven2/org/slf4j/slf4j-api/1.7.21/slf4j-api-1.7.21.jar"/>
 					</artifact>
+				</artifacts>
+			</revision>
+			<revision name="1.7.12" evicted="latest-revision" evicted-reason="" downloaded="false" searched="false" conf="compile, runtime(*), master(compile), runtime, compile(*), master" position="-1">
+				<evicted-by rev="1.7.21"/>
+				<caller organisation="com.zaxxer" name="HikariCP" conf="default, compile, runtime, master" rev="1.7.12" rev-constraint-default="1.7.12" rev-constraint-dynamic="1.7.12" callerrev="2.4.1"/>
+				<artifacts>
 				</artifacts>
 			</revision>
 			<revision name="1.7.18" evicted="latest-revision" evicted-reason="" downloaded="false" searched="false" conf="compile, runtime(*), master(compile), runtime, compile(*), master" position="-1">

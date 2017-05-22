@@ -4,7 +4,7 @@
 		module="play-scala-reactive-functional-crud_2.11"
 		revision="1.0-SNAPSHOT"
 		status="integration"
-		publication="20170520141421"
+		publication="20170521192939"
 	>
 		<description>
 		play-scala-reactive-functional-crud
@@ -47,6 +47,8 @@
 		<dependency org="com.typesafe.slick" name="slick_2.11" rev="3.2.0" conf="compile->default(compile)"/>
 		<dependency org="com.typesafe.scala-logging" name="scala-logging_2.11" rev="3.4.0" conf="compile->default(compile)"/>
 		<dependency org="org.scala-lang.modules" name="scala-async_2.11" rev="0.9.6" conf="compile->default(compile)"/>
+		<dependency org="com.zaxxer" name="HikariCP" rev="2.4.1" conf="compile->default(compile)"/>
 		<dependency org="org.scalatest" name="scalatest_2.11" rev="3.0.1" conf="test->default(compile)"/>
+		<dependency org="com.h2database" name="h2" rev="1.4.186" conf="test->default(compile)"/>
 	</dependencies>
 </ivy-module>

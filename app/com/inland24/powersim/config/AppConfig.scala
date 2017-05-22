@@ -1,20 +1,22 @@
 /*
- * Copyright (c) 2017 joesan @ http://github.com/joesan
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  * Copyright (c) 2017 joesan @ http://github.com/joesan
+ *  *
+ *  * Licensed under the Apache License, Version 2.0 (the "License");
+ *  * you may not use this file except in compliance with the License.
+ *  * You may obtain a copy of the License at
+ *  *
+ *  *   http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ *  * Unless required by applicable law or agreed to in writing, software
+ *  * distributed under the License is distributed on an "AS IS" BASIS,
+ *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  * See the License for the specific language governing permissions and
+ *  * limitations under the License.
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
-package com.inland24.crud.config
+package com.inland24.powersim.config
 
 import java.util.concurrent.TimeUnit
 
@@ -64,11 +66,11 @@ object AppConfig {
   def load(config: Config): AppConfig = {
     AppConfig(
       database = DBConfig(
-        url = config.getString("dbConfig.url"),
-        user = Try(config.getString("dbConfig.user")).toOption.filterNot(_.isEmpty),
-        password = Try(config.getString("dbConfig.password")).toOption.filterNot(_.isEmpty),
-        driver = config.getString("dbConfig.driver"),
-        refreshInterval = config.getDuration("dbConfig.refreshInterval", TimeUnit.MILLISECONDS).millis
+        url = config.getString("db.url"),
+        user = Try(config.getString("db.user")).toOption.filterNot(_.isEmpty),
+        password = Try(config.getString("db.password")).toOption.filterNot(_.isEmpty),
+        driver = config.getString("db.driver"),
+        refreshInterval = config.getDuration("db.refreshInterval", TimeUnit.MILLISECONDS).millis
       )
     )
   }
