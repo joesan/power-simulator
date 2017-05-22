@@ -42,6 +42,8 @@ javacOptions ++= Seq(
   "-Xlint:unchecked", "-Xlint:deprecation"
 )
 
+scalacOptions += "-target:jvm-1.8"
+
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
 doc in Compile <<= target.map(_ / "none")
