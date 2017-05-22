@@ -1,6 +1,8 @@
 *.idea
 *.ipr
 *.iml
+target/*
+project/target/*
 /project/target/*
 /target/*
 *.log*
