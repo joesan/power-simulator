@@ -2,6 +2,7 @@
 *.ipr
 *.iml
 target/*
+project/project/*
 project/target/*
 /project/target/*
 /target/*

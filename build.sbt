@@ -1,4 +1,4 @@
-name := """play-scala-reactive-functional-crud"""
+name := """power-simulator"""
 
 version := "1.0-SNAPSHOT"
 
