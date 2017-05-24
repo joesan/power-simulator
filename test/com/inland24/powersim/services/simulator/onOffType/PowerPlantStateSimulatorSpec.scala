@@ -37,11 +37,16 @@ class PowerPlantStateSimulatorSpec extends FlatSpec {
     init.foreach {
       case (key, value) if key == PowerPlantState.activePowerSignalKey => assert(value === onOffTpeCfg.minPower.toString)
       case (key, value) if key == PowerPlantState.isAvailableSignalKey => assert(value.toBoolean)
-      case (key, value) if key == PowerPlantState.isOnOffSignalKey     => assert(value.toBoolean)
+      case (key, value) if key == PowerPlantState.isOnOffSignalKey     => assert(!value.toBoolean) // should be Off when initializing
     }
   }
 
   "PowerPlantState#turnOn" should "turnOn when in Off state and in available state" in {
-
+    val turnedOn = PowerPlantState.turnOn(PowerPlantState.init(onOffTpeCfg.minPower), onOffTpeCfg.maxPower)
+    turnedOn.foreach {
+      case (key, value) if key == PowerPlantState.activePowerSignalKey => assert(value === onOffTpeCfg.maxPower.toString)
+      case (key, value) if key == PowerPlantState.isAvailableSignalKey => assert(value.toBoolean)
+      case (key, value) if key == PowerPlantState.isOnOffSignalKey     => assert(value.toBoolean)
+    }
   }
 }
