@@ -22,7 +22,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.async.Async._
 
 
-class PowerPlantDBService(val dbConfig: DBConfig)(implicit ec: ExecutionContext) { self =>
+class PowerPlantDBService(val dbConfig: DBConfig)(
+    implicit ec: ExecutionContext) { self =>
 
   private val schema = DBSchema(dbConfig.slickDriver)
   private val database = dbConfig.database
@@ -32,11 +33,13 @@ class PowerPlantDBService(val dbConfig: DBConfig)(implicit ec: ExecutionContext)
   import schema.driver.api._
 
   // PowerPlant related CRUD services //
-  def allPowerPlants(fetchOnlyActive: Boolean = false): Future[Seq[PowerPlantRow]] = {
-    val query = if (fetchOnlyActive)
-      PowerPlantTable.activePowerPlants
-    else
-      PowerPlantTable.all
+  def allPowerPlants(
+      fetchOnlyActive: Boolean = false): Future[Seq[PowerPlantRow]] = {
+    val query =
+      if (fetchOnlyActive)
+        PowerPlantTable.activePowerPlants
+      else
+        PowerPlantTable.all
 
     database.run(query.result)
   }

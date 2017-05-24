@@ -15,8 +15,9 @@
 
 package com.inland24.powersim.actors
 
-import akka.actor.Actor
+import akka.actor.{Actor, Props}
 import akka.pattern.ask
+import com.inland24.powersim.actors.DBServiceActor.GetActivePowerPlants
 import com.inland24.powersim.config.DBConfig
 import com.inland24.powersim.observables.DBServiceObservable
 import com.inland24.powersim.services.database.PowerPlantDBService
@@ -25,7 +26,6 @@ import monix.execution.Ack.Continue
 import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.reactive.Observable
 import monix.execution.FutureUtils.extensions._
-
 
 // TODO: pass in zhe execution context
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,15 +42,34 @@ class DBServiceActor(dbConfig: DBConfig) extends Actor {
     super.preStart()
 
     // Initialize the DBServiceObservable - for fetching the PowerPlant's and pipe it to self
-    val obs: Observable[Seq[PowerPlantRow]] = DBServiceObservable.powerPlantDBServiceObservable(
-      powerPlantDBService.dbConfig.refreshInterval,
-      powerPlantDBService.allPowerPlants(fetchOnlyActive = true)
-    )
+    val obs: Observable[Seq[PowerPlantRow]] =
+      DBServiceObservable.powerPlantDBServiceObservable(
+        powerPlantDBService.dbConfig.refreshInterval,
+        powerPlantDBService.allPowerPlants(fetchOnlyActive = true)
+      )
 
     powerPlantDBSubscription := obs.subscribe { update =>
-      (self ? update).materialize.map(_ => Continue)
+      (self ? update).map(_ => Continue)
     }
   }
 
-  override def receive: Receive = ???
+  override def receive: Receive = {
+    case powerPlantRowSeq: Seq[PowerPlantRow] =>
+      context.become(active(powerPlantRowSeq))
+  }
+
+  def active(powerPlants: Seq[PowerPlantRow]): Receive = {
+    case powerPlantRowSeq: Seq[PowerPlantRow] =>
+      context.become(active(powerPlantRowSeq))
+    case GetActivePowerPlants =>
+      sender() ! powerPlants
+  }
+}
+object DBServiceActor {
+
+  sealed trait Message
+  case object GetActivePowerPlants extends Message
+
+  def props(dbConfig: DBConfig): Props =
+    Props(new DBServiceActor(dbConfig))
 }

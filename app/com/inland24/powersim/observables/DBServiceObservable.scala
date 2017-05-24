@@ -31,7 +31,7 @@ import scala.util.{Failure, Success}
   * stream depends on the caller and is governed by the function that
   * he passes to the constructor
   */
-class DBServiceObservable[T] private(refreshInterval: FiniteDuration, fn: => Future[T])
+class DBServiceObservable[T] private (refreshInterval: FiniteDuration, fn: => Future[T])
   extends Observable[T] {
 
   override def unsafeSubscribeFn(subscriber: Subscriber[T]): Cancelable = {
@@ -39,13 +39,14 @@ class DBServiceObservable[T] private(refreshInterval: FiniteDuration, fn: => Fut
     def underlying = {
       val powerPlantsFutSeq = fn.materialize.map {
         case Success(succ) => Some(succ)
-        case Failure(fail) => None // TODO: log the errors!!!
+        case Failure(_) => None // TODO: log the errors!!!
       }
 
       Observable.fromFuture(powerPlantsFutSeq)
     }
 
-    Observable.intervalAtFixedRate(refreshInterval)
+    Observable
+      .intervalAtFixedRate(refreshInterval)
       .flatMap(_ => underlying)
       .collect { case Some(powerPlantsSeq) => powerPlantsSeq }
       .distinctUntilChanged
@@ -54,6 +55,8 @@ class DBServiceObservable[T] private(refreshInterval: FiniteDuration, fn: => Fut
 }
 object DBServiceObservable {
 
-  def powerPlantDBServiceObservable(refreshInterval: FiniteDuration, fn: Future[Seq[PowerPlantRow]]) =
+  def powerPlantDBServiceObservable(
+    refreshInterval: FiniteDuration,
+    fn: Future[Seq[PowerPlantRow]]): DBServiceObservable[Seq[PowerPlantRow]] =
     new DBServiceObservable[Seq[PowerPlantRow]](refreshInterval, fn)
 }

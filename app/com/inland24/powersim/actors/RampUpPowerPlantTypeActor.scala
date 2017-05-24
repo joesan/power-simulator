@@ -25,5 +25,6 @@ final class RampUpPowerPlantTypeActor(globalChannel: GlobalOutputChannel) extend
 }
 object RampUpPowerPlantTypeActor {
 
-  def props(globalChannel: GlobalOutputChannel) = Props(new RampUpPowerPlantTypeActor(globalChannel))
+  def props(globalChannel: GlobalOutputChannel): Props =
+    Props(new RampUpPowerPlantTypeActor(globalChannel))
 }

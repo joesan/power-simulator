@@ -36,6 +36,6 @@ object AppBindings {
       GlobalOutputChannel.apply
 
     override val supervisorActor: ActorRef =
-      system.actorOf(SupervisorActor.props(globalChannel))
+      system.actorOf(ThrowAwaySupervisor.props(globalChannel))
   }
 }

@@ -15,60 +15,17 @@
 
 package com.inland24.powersim.core
 
-import akka.actor.{Actor, Props}
-import com.inland24.powersim.models.MyMessages.{Destroy, Init, Tick}
-import com.inland24.powersim.observables.{MyConnectableObservable, MyObservable}
-import com.inland24.powersim.observers.MyObserver
-import com.inland24.powersim.services.ZombieConnectorService
-import com.typesafe.scalalogging.LazyLogging
-import monix.execution.Scheduler
-import monix.execution.cancelables.CompositeCancelable
-import monix.reactive.observables.ConnectableObservable
+import akka.actor.Actor
+import com.inland24.powersim.config.AppConfig
 
 
-class SupervisorActor(globalChannel: GlobalOutputChannel)(implicit s: Scheduler)
-  extends Actor with LazyLogging {
+class SupervisorActor (config: AppConfig) extends Actor {
 
-  private[this] val subscriptions = CompositeCancelable()
+  override def preStart() = {
+    super.preStart()
 
-  override def preStart = {
-    logger.info(s"starting Supervisor Actor [$self]")
-    self ! Init
+    // Initialize our actors
   }
 
-  override def postStop = {
-    subscriptions.cancel()
-    logger.info(s"cancelling all subscriptions :: isCancelled ${subscriptions.isCanceled}")
-  }
-
-  private def init(): Seq[ConnectableObservable[Long]] = {
-    // 1. our Observables
-    val myObservable = MyObservable.apply
-    val myConnectableObservable = MyConnectableObservable.apply(ZombieConnectorService.apply)
-
-    // 2. our Subscribers (Subscribes are nothing but Observers with a Scheduler)
-    val mySubscriber = MyObserver.apply(self, "hot-subscriber")
-    val myConnectableSubscriber = MyObserver.apply(self, "cold-subscriber")
-
-    // 3. marry the Observers and the Observables
-    subscriptions += myObservable.unsafeSubscribeFn(mySubscriber)
-    subscriptions += myConnectableObservable.unsafeSubscribeFn(myConnectableSubscriber)
-
-    // 4. return a reference to all the connectables
-    Seq(myConnectableObservable)
-  }
-
-  override def receive: Receive = {
-    case Init =>
-      init().foreach(elem => subscriptions += elem.connect())
-    case tick: Tick =>
-      // TODO: is this a good practice? exposing the internals of the GlobalChannel ???
-      globalChannel.publishChannel.onNext(tick)
-    case Destroy =>
-      subscriptions.cancel()
-  }
-}
-object SupervisorActor {
-  implicit val s = monix.execution.Scheduler.Implicits.global
-  def props(globalChannel: GlobalOutputChannel) = Props(new SupervisorActor(globalChannel))
+  override def receive: Receive = ???
 }

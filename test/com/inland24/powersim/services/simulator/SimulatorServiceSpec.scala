@@ -24,7 +24,7 @@ final class SimulatorServiceSpec extends FlatSpec {
 
   "SimulatorService#IntRandomValue" should "generate a random int value between a range" in {
     (1 to 10000) foreach { _ =>
-      val rndm = SimulatorService.IntRandomValue.random(200, 400)
+      val rndm = RandomValueGeneratorService.IntRandomValue.random(200, 400)
       assert(rndm <= 400)
       assert(rndm >= 200)
     }
@@ -32,7 +32,7 @@ final class SimulatorServiceSpec extends FlatSpec {
 
   "SimulatorService#DoubleRandomValue" should "generate a random double value between a range" in {
     (1 to 10000) foreach { _ =>
-      val rndm = SimulatorService.DoubleRandomValue.random(200.0, 400.0)
+      val rndm = RandomValueGeneratorService.DoubleRandomValue.random(200.0, 400.0)
       assert(rndm <= 400.0)
       assert(rndm >= 200.0)
     }

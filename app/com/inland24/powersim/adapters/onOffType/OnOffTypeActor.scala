@@ -13,13 +13,20 @@
  * limitations under the License.
  */
 
-package com.inland24.powersim.services.simulator
+package com.inland24.powersim.adapters.onOffType
 
-// This is the class that is responsible for simulating the
-// status of a power plant!
-class SimulatorService {
+import akka.actor.{Actor, Props}
+import com.inland24.powersim.models.PowerPlantConfig.OnOffTypeConfig
 
+
+class OnOffTypeActor(onOffTypeConfig: OnOffTypeConfig) extends Actor {
+
+  override def receive: Receive = {
+
+  }
 }
-object SimulatorService {
+object OnOffTypeActor {
 
+  def props(cfg: OnOffTypeConfig): Props =
+    Props(new OnOffTypeActor(cfg))
 }

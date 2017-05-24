@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-package com.inland24.powersim.services.simulator
+package com.inland24.powersim.adapters.onOffType
 
-// This is the class that is responsible for simulating the
-// status of a power plant!
-class SimulatorService {
+import com.inland24.powersim.models.PowerPlantState
 
-}
-object SimulatorService {
 
-}
+case class OnOffTypeStateMachine(
+  powerPlantState: PowerPlantState,
+  lastSetPointValue: Option[Double]
+)
