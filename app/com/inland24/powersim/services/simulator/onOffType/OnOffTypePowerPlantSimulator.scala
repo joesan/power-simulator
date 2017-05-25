@@ -37,16 +37,16 @@ class OnOffTypePowerPlantSimulator private (cfg: OnOffTypeConfig)
 
   override def receive: Receive = {
     case Init =>
-      context.become(active(new PowerPlantState(cfg.id, signals = PowerPlantState.init(cfg.minPower))))
+      context.become(active(PowerPlantState.init(PowerPlantState.empty(cfg.id), cfg.minPower)))
   }
 
   def active(state: PowerPlantState): Receive = {
     case StateRequest =>
       sender ! state
     case TurnOn => // Turning On means deliver max power
-      state.copy(signals = PowerPlantState.turnOn(state.signals, maxPower = cfg.maxPower))
+      PowerPlantState.turnOn(state, maxPower = cfg.maxPower)
     case TurnOff => // Turning Off means returning to min power
-      state.copy(signals = PowerPlantState.turnOff(state.signals, minPower = cfg.minPower))
+      PowerPlantState.turnOff(state, minPower = cfg.minPower)
     case OutOfService =>
       state.copy(signals = PowerPlantState.unAvailableSignals)
     case ReturnToService =>

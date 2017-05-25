@@ -15,8 +15,6 @@
 
 package com.inland24.powersim.services.simulator.onOffType
 
-import com.inland24.powersim.services.simulator.onOffType.OnOffTypePowerPlantSimulator._
-
 
 case class PowerPlantState(powerPlantId: Long, signals: Map[String, String])
 object PowerPlantState {
