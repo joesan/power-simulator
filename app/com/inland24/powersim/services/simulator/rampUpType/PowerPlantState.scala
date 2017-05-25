@@ -17,6 +17,70 @@ package com.inland24.powersim.services.simulator.rampUpType
 
 
 case class PowerPlantState(powerPlantId: Long, signals: Map[String, String])
+
+// TODO: refactor and rewrite
 object PowerPlantState {
 
+  def empty(id: Long): PowerPlantState = PowerPlantState(
+    id,
+    Map.empty[String, String]
+  )
+
+  val unAvailableSignals = Map(
+    activePowerSignalKey -> 0.1.toString, // the power does not matter when the plant is unavailable for steering
+    isOnOffSignalKey     -> false.toString,
+    isAvailableSignalKey -> false.toString // indicates if the power plant is not available for steering
+  )
+
+  val isAvailableSignalKey = "isAvailable"
+  val isOnOffSignalKey = "isOnOff"
+  val activePowerSignalKey = "activePower"
+
+  def init(powerPlantState: PowerPlantState, minPower: Double): PowerPlantState = {
+    powerPlantState.copy(
+      signals = Map(
+        activePowerSignalKey -> minPower.toString, // be default this plant operates at min power
+        isOnOffSignalKey     -> false.toString,
+        isAvailableSignalKey -> true.toString // indicates if the power plant is available for steering
+      )
+    )
+  }
+
+  def turnOff(powerPlantState: PowerPlantState, minPower: Double): PowerPlantState = {
+    val collectedSignals = powerPlantState.signals.collect { // to turn Off, you got to be available and be in an on state
+      case (key, value) if key == isAvailableSignalKey && value.toBoolean => key -> value
+      case (key, value) if key == isOnOffSignalKey && value.toBoolean     => key -> value
+    }
+
+    if (collectedSignals.size == 2) {
+      powerPlantState.copy(
+        signals = Map(
+          activePowerSignalKey -> minPower.toString, // we turn it off to min power
+          isOnOffSignalKey     -> false.toString,
+          isAvailableSignalKey -> true.toString // the plant is still available and not faulty!
+        )
+      )
+    } else {
+      powerPlantState
+    }
+  }
+
+  def dispatch(powerPlantState: PowerPlantState, power: Double): PowerPlantState = {
+    val collectedSignals = powerPlantState.signals.collect { // to turn On, you got to be available and be in an off state
+      case (key, value) if key == isAvailableSignalKey && value.toBoolean => key -> value
+      case (key, value) if key == isOnOffSignalKey && !value.toBoolean    => key -> value
+    }
+
+    if (collectedSignals.size == 2) {
+      powerPlantState.copy(
+        signals = Map(
+          activePowerSignalKey -> power.toString, // we turn it on to max power
+          isOnOffSignalKey     -> true.toString,
+          isAvailableSignalKey -> true.toString // the plant is still available and not faulty!
+        )
+      )
+    } else {
+      powerPlantState
+    }
+  }
 }

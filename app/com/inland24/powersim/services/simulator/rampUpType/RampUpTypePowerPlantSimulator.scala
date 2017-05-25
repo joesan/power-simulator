@@ -41,9 +41,9 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
   def active(state: PowerPlantState): Receive = {
     case StateRequest =>
       sender ! state
-    case TurnOn => // Turning On means deliver max power
+    case Dispatch(power) => // Dispatch to the specified power value
       PowerPlantState.turnOn(state, maxPower = cfg.maxPower)
-    case TurnOff => // Turning Off means returning to min power
+    case Release => // Releasing means the Power plant is no longer in our control
       PowerPlantState.turnOff(state, minPower = cfg.minPower)
     case OutOfService =>
       state.copy(signals = PowerPlantState.unAvailableSignals)
