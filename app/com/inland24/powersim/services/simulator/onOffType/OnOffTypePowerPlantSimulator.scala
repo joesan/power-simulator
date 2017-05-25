@@ -60,6 +60,8 @@ object OnOffTypePowerPlantSimulator {
   case object StateRequest extends Message
   case object TurnOn  extends Message
   case object TurnOff extends Message
+
+  // These messages are meant for manually faulting and unfaulting the power plant
   case object OutOfService extends Message
   case object ReturnToService extends Message
 

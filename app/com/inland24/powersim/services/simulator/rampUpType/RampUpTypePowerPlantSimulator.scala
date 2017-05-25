@@ -56,8 +56,10 @@ object RampUpTypePowerPlantSimulator {
   sealed trait Message
   case object Init extends Message
   case object StateRequest extends Message
-  case object TurnOn  extends Message
-  case object TurnOff extends Message
+  case class  Dispatch(power: Double) extends Message
+  case object Release extends Message
+
+  // These messages are meant for manually faulting and unfaulting the power plant
   case object OutOfService extends Message
   case object ReturnToService extends Message
 
