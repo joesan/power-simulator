@@ -42,13 +42,18 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
     case StateRequest =>
       sender ! state
     case Dispatch(power) => // Dispatch to the specified power value
-      PowerPlantState.turnOn(state, maxPower = cfg.maxPower)
+      PowerPlantState.dispatch(state, power)
     case Release => // Releasing means the Power plant is no longer in our control
       PowerPlantState.turnOff(state, minPower = cfg.minPower)
     case OutOfService =>
       state.copy(signals = PowerPlantState.unAvailableSignals)
     case ReturnToService =>
       self ! Init
+  }
+
+  def checkRamp(state: PowerPlantState): Receive = {
+    case RampCheck =>
+      
   }
 }
 object RampUpTypePowerPlantSimulator {
@@ -58,6 +63,7 @@ object RampUpTypePowerPlantSimulator {
   case object StateRequest extends Message
   case class  Dispatch(power: Double) extends Message
   case object Release extends Message
+  case object RampCheck extends Message
 
   // These messages are meant for manually faulting and unfaulting the power plant
   case object OutOfService extends Message
