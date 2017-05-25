@@ -13,15 +13,13 @@
  * limitations under the License.
  */
 
-package com.inland24.powersim.services.simulator.onOffType
+package com.inland24.powersim.services.simulator.rampUpType
 
 import akka.actor.{Actor, Props}
-import com.inland24.powersim.models.PowerPlantConfig.OnOffTypeConfig
-import OnOffTypePowerPlantSimulator._
+import com.inland24.powersim.models.PowerPlantConfig.RampUpTypeConfig
+import RampUpTypePowerPlantSimulator._
 
-
-// TODO: use this Actor to simulate the PowerPlant's
-class OnOffTypePowerPlantSimulator private (cfg: OnOffTypeConfig)
+class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
   extends Actor {
 
   /*
@@ -53,7 +51,7 @@ class OnOffTypePowerPlantSimulator private (cfg: OnOffTypeConfig)
       self ! Init
   }
 }
-object OnOffTypePowerPlantSimulator {
+object RampUpTypePowerPlantSimulator {
 
   sealed trait Message
   case object Init extends Message
@@ -63,6 +61,6 @@ object OnOffTypePowerPlantSimulator {
   case object OutOfService extends Message
   case object ReturnToService extends Message
 
-  def props(cfg: OnOffTypeConfig): Props =
-    Props(new OnOffTypePowerPlantSimulator(cfg))
+  def props(cfg: RampUpTypeConfig): Props =
+    Props(new RampUpTypePowerPlantSimulator(cfg))
 }

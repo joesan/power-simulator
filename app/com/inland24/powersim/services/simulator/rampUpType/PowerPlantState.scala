@@ -13,32 +13,10 @@
  * limitations under the License.
  */
 
-package com.inland24.powersim.models
+package com.inland24.powersim.services.simulator.rampUpType
 
 
-sealed trait PowerPlantConfig {
-  def id: Long
-  def name: String
-  def minPower: Double
-  def maxPower: Double
-  def powerPlantType: PowerPlantType
-}
-object PowerPlantConfig {
+case class PowerPlantState(powerPlantId: Long, signals: Map[String, String])
+object PowerPlantState {
 
-  case class OnOffTypeConfig(
-    id: Long,
-    name: String,
-    minPower: Double,
-    maxPower: Double,
-    powerPlantType: PowerPlantType
-  ) extends PowerPlantConfig
-
-  case class RampUpTypeConfig(
-    id: Long,
-    name: String,
-    minPower: Double,
-    maxPower: Double,
-    rampSpeedPerMinute: Double,
-    powerPlantType: PowerPlantType
-  ) extends PowerPlantConfig
 }
