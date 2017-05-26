@@ -35,16 +35,22 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
 
   override def receive: Receive = {
     case Init =>
-      context.become(active(PowerPlantState.init(PowerPlantState.empty(cfg.id), cfg.minPower)))
+      context.become(
+        active(
+          PowerPlantState.init(
+            PowerPlantState.empty(cfg.id, cfg.rampSpeed), cfg.minPower
+          )
+        )
+      )
   }
 
   def active(state: PowerPlantState): Receive = {
     case StateRequest =>
       sender ! state
     case Dispatch(power) => // Dispatch to the specified power value
-      PowerPlantState.dispatch(state, power)
-    case Release => // Releasing means the Power plant is no longer in our control
-      PowerPlantState.turnOff(state, minPower = cfg.minPower)
+      PowerPlantState.dispatch(state.copy(setPoint = power))
+    case Release => // Releasing means the Power plant is no longer in our control // TODO: work on it!!!
+      //PowerPlantState.turnOff(state, minPower = cfg.minPower)
     case OutOfService =>
       state.copy(signals = PowerPlantState.unAvailableSignals)
     case ReturnToService =>
@@ -53,7 +59,18 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
 
   def checkRamp(state: PowerPlantState): Receive = {
     case RampCheck =>
-      
+      val isDispatched = PowerPlantState.isDispatched(state)
+      // We first check if we have reached the setPoint, if yes, we switch context
+      if (isDispatched) {
+        context.become(active(state))
+      } // If the setPoint is not reached, we check if it is time to RampUp
+      else if (PowerPlantState.isRampUp(state.lastRampTime, cfg.rampRateInSeconds)) {
+        self ! PowerPlantState.dispatch(state)
+      } else {
+        self ! state // try once again to ramp up!
+      }
+    case StateRequest =>
+      sender ! state
   }
 }
 object RampUpTypePowerPlantSimulator {

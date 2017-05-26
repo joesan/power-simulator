@@ -15,6 +15,8 @@
 
 package com.inland24.powersim.models
 
+import scala.concurrent.duration.FiniteDuration
+
 
 sealed trait PowerPlantConfig {
   def id: Long
@@ -38,7 +40,8 @@ object PowerPlantConfig {
     name: String,
     minPower: Double,
     maxPower: Double,
-    rampSpeedPerMinute: Double,
+    rampSpeed: Double,
+    rampRateInSeconds: FiniteDuration,
     powerPlantType: PowerPlantType
   ) extends PowerPlantConfig
 }

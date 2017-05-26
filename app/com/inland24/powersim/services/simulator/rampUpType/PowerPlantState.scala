@@ -15,48 +15,90 @@
 
 package com.inland24.powersim.services.simulator.rampUpType
 
+import org.joda.time.{DateTime, DateTimeZone, Seconds}
 
-case class PowerPlantState(powerPlantId: Long, signals: Map[String, String])
+import scala.concurrent.duration._
+
+
+case class PowerPlantState(
+  powerPlantId: Long,
+  setPoint: Double,
+  lastRampTime: DateTime,
+  rampRate: Double,
+  signals: Map[String, String]
+)
 
 // TODO: refactor and rewrite
 object PowerPlantState {
 
-  def empty(id: Long): PowerPlantState = PowerPlantState(
+  def empty(id: Long, rampRate: Double): PowerPlantState = PowerPlantState(
     id,
+    setPoint = rampRate,
+    DateTime.now(DateTimeZone.UTC),
+    rampRate,
     Map.empty[String, String]
   )
 
   val unAvailableSignals = Map(
     activePowerSignalKey -> 0.1.toString, // the power does not matter when the plant is unavailable for steering
-    isOnOffSignalKey     -> false.toString,
+    isDispatchedKey         -> false.toString,
     isAvailableSignalKey -> false.toString // indicates if the power plant is not available for steering
   )
 
   val isAvailableSignalKey = "isAvailable"
-  val isOnOffSignalKey = "isOnOff"
+  val isDispatchedKey = "isDispatched"
   val activePowerSignalKey = "activePower"
+
+  def isDispatched(state: PowerPlantState): Boolean = {
+    val collectedSignal = state.signals.collect { // to dispatch, you got to be available
+      case (key, value) if key == activePowerSignalKey && value.toBoolean => key -> value
+    }
+
+    collectedSignal.nonEmpty && (collectedSignal(activePowerSignalKey).toDouble >= state.setPoint)
+  }
+
+  def isRampUp(timeSinceLastRamp: DateTime, rampRateInSeconds: FiniteDuration): Boolean = {
+    val elapsed = Seconds.secondsBetween(DateTime.now(DateTimeZone.UTC), timeSinceLastRamp)
+    elapsed.getSeconds.seconds > rampRateInSeconds
+  }
+
+  def rampCheck(state: PowerPlantState): PowerPlantState = {
+    state.signals.get(activePowerSignalKey) match {
+      case Some(activePower) =>
+        state.copy(
+          signals = Map(
+            // The new activePower will be the sum of old activePower + rampRate
+            activePowerSignalKey -> (state.rampRate + activePower.toDouble).toString,
+            isDispatchedKey      -> false.toString,
+            isAvailableSignalKey -> true.toString // indicates if the power plant is available for steering
+          )
+        )
+      case _ => state
+    }
+  }
 
   def init(powerPlantState: PowerPlantState, minPower: Double): PowerPlantState = {
     powerPlantState.copy(
       signals = Map(
         activePowerSignalKey -> minPower.toString, // be default this plant operates at min power
-        isOnOffSignalKey     -> false.toString,
+        isDispatchedKey      -> false.toString,
         isAvailableSignalKey -> true.toString // indicates if the power plant is available for steering
       )
     )
   }
 
-  def turnOff(powerPlantState: PowerPlantState, minPower: Double): PowerPlantState = {
+  def release(powerPlantState: PowerPlantState, minPower: Double): PowerPlantState = {
     val collectedSignals = powerPlantState.signals.collect { // to turn Off, you got to be available and be in an on state
       case (key, value) if key == isAvailableSignalKey && value.toBoolean => key -> value
-      case (key, value) if key == isOnOffSignalKey && value.toBoolean     => key -> value
     }
 
-    if (collectedSignals.size == 2) {
+    if (collectedSignals.nonEmpty && powerPlantState.signals.get(activePowerSignalKey).isDefined) {
+      val currentActivePower = powerPlantState.signals(activePowerSignalKey).toDouble
+
       powerPlantState.copy(
         signals = Map(
           activePowerSignalKey -> minPower.toString, // we turn it off to min power
-          isOnOffSignalKey     -> false.toString,
+          isDispatchedKey      -> false.toString,
           isAvailableSignalKey -> true.toString // the plant is still available and not faulty!
         )
       )
@@ -65,22 +107,34 @@ object PowerPlantState {
     }
   }
 
-  def dispatch(powerPlantState: PowerPlantState, power: Double): PowerPlantState = {
-    val collectedSignals = powerPlantState.signals.collect { // to turn On, you got to be available and be in an off state
+  def dispatch(state: PowerPlantState): PowerPlantState = {
+    val collectedSignal = state.signals.collect { // to dispatch, you got to be available
       case (key, value) if key == isAvailableSignalKey && value.toBoolean => key -> value
-      case (key, value) if key == isOnOffSignalKey && !value.toBoolean    => key -> value
     }
 
-    if (collectedSignals.size == 2) {
-      powerPlantState.copy(
-        signals = Map(
-          activePowerSignalKey -> power.toString, // we turn it on to max power
-          isOnOffSignalKey     -> true.toString,
-          isAvailableSignalKey -> true.toString // the plant is still available and not faulty!
+    if (collectedSignal.nonEmpty && state.signals.get(activePowerSignalKey).isDefined) {
+      val currentActivePower = state.signals(activePowerSignalKey).toDouble
+      // check if the newActivePower is greater than setPoint
+      if (currentActivePower + state.rampRate > state.setPoint) { // this means we have fully ramped up to the setPoint
+        state.copy(
+          signals = Map(
+            isDispatchedKey      -> true.toString,
+            activePowerSignalKey -> state.setPoint.toString,
+            isAvailableSignalKey -> true.toString // the plant is still available and not faulty!
+          )
         )
-      )
+      }
+      else {
+        state.copy(
+          signals = Map(
+            isDispatchedKey      -> false.toString,
+            activePowerSignalKey -> (currentActivePower + state.rampRate).toString,
+            isAvailableSignalKey -> true.toString // the plant is still available and not faulty!
+          )
+        )
+      }
     } else {
-      powerPlantState
+      state
     }
   }
 }
