@@ -35,6 +35,7 @@ object PowerPlantState {
   def empty(id: Long, minPower: Double, rampRate: Double, rampRateInSeconds: FiniteDuration): PowerPlantState = PowerPlantState(
     id,
     setPoint = minPower,
+    // We set the lastRampTime as the time that was now minus rampRateInSeconds
     DateTime.now(DateTimeZone.UTC),
     rampRate,
     rampRateInSeconds,
@@ -60,8 +61,8 @@ object PowerPlantState {
   }
 
   def isRampUp(timeSinceLastRamp: DateTime, rampRateInSeconds: FiniteDuration): Boolean = {
-    val elapsed = Seconds.secondsBetween(DateTime.now(DateTimeZone.UTC), timeSinceLastRamp)
-    elapsed.getSeconds.seconds > rampRateInSeconds
+    val elapsed = Seconds.secondsBetween(DateTime.now(DateTimeZone.UTC), timeSinceLastRamp).multipliedBy(-1)
+    elapsed.getSeconds.seconds >= rampRateInSeconds
   }
 
   def rampCheck(state: PowerPlantState): PowerPlantState = {
@@ -109,7 +110,6 @@ object PowerPlantState {
     }
   }
 
-  // TODO: Move the isRampUp check inside dispatch
   def dispatch(state: PowerPlantState): PowerPlantState = {
 
     if (isRampUp(state.lastRampTime, state.rampRateInSeconds)) {

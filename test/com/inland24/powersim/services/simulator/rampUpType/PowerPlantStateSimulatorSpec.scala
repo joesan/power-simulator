@@ -28,9 +28,9 @@ class PowerPlantStateSimulatorSpec extends FlatSpec {
   val cfg = RampUpTypeConfig(
     id = 1,
     name = "RampUpType",
-    minPower = 400,
-    maxPower = 800,
-    rampPowerRate = 100,
+    minPower = 400.0,
+    maxPower = 800.0,
+    rampPowerRate = 100.0,
     rampRateInSeconds = 4.seconds,
     powerPlantType = PowerPlantType.RampUpType
   )
@@ -76,26 +76,29 @@ class PowerPlantStateSimulatorSpec extends FlatSpec {
      * Let us now test if this happens!
      * The first dispatch command should take its activePower to 500
      */
-    val dispatchState1 = PowerPlantState.dispatch(initState.copy(setPoint = cfg.maxPower))
+    val dispatchState1 = PowerPlantState.dispatch(initState.copy(setPoint = cfg.maxPower, lastRampTime = initState.lastRampTime.minusSeconds(4)))
     assert(dispatchState1.signals(PowerPlantState.activePowerSignalKey).toDouble === 500)
+    // we then come back to the current time for the lastRampTime, so that we can do the next tests
+    val reset1 = dispatchState1.copy(lastRampTime = DateTime.now(DateTimeZone.UTC))
 
     /*
      * On our second dispatch, we should go from 500 to 600, but we got to wait 4 seconds
-     * Blocking may be a bad idea, so we simulate time (i.e., add 4 seconds to the isRampUp check)
+     * Blocking may be a bad idea, so we simulate time (i.e., subtract 4 seconds to the isRampUp check)
      */
-    val dispatchState2 = PowerPlantState.dispatch(dispatchState1.copy(lastRampTime = dispatchState1.lastRampTime.plusSeconds(4)))
+    val dispatchState2 = PowerPlantState.dispatch(reset1.copy(lastRampTime = dispatchState1.lastRampTime.minusSeconds(4)))
     assert(dispatchState2.signals(PowerPlantState.activePowerSignalKey).toDouble === 600)
+    val reset2 = dispatchState2.copy(lastRampTime = DateTime.now(DateTimeZone.UTC))
 
     // Let's try another dispatch immediately, this should have no effect and we should still stay at 600
-    val dispatchState2_copy = PowerPlantState.dispatch(dispatchState2)
-    assert(dispatchState2 === dispatchState2_copy)
+    val dispatchState2_copy = PowerPlantState.dispatch(reset2.copy(lastRampTime = reset2.lastRampTime.plusSeconds(1)))
+    assert(reset2.signals === dispatchState2_copy.signals)
 
     // Another 4 seconds elapse, we move to 700
-    val dispatchState3 = PowerPlantState.dispatch(dispatchState2.copy(lastRampTime = dispatchState2.lastRampTime.plusSeconds(4)))
+    val dispatchState3 = PowerPlantState.dispatch(dispatchState2.copy(lastRampTime = dispatchState2.lastRampTime.minusSeconds(4)))
     assert(dispatchState3.signals(PowerPlantState.activePowerSignalKey).toDouble === 700)
 
     // Another 4 seconds elapse, we move to 800, our setPoint
-    val dispatchState4 = PowerPlantState.dispatch(dispatchState3.copy(lastRampTime = dispatchState3.lastRampTime.plusSeconds(4)))
+    val dispatchState4 = PowerPlantState.dispatch(dispatchState3.copy(lastRampTime = dispatchState3.lastRampTime.minusSeconds(4)))
     assert(dispatchState4.signals(PowerPlantState.activePowerSignalKey).toDouble === 800)
   }
 }
