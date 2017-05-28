@@ -38,7 +38,7 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
       context.become(
         active(
           PowerPlantState.init(
-            PowerPlantState.empty(cfg.id, cfg.rampSpeed), cfg.minPower
+            PowerPlantState.empty(cfg.id, cfg.minPower, cfg.rampPowerRate, cfg.rampRateInSeconds), cfg.minPower
           )
         )
       )
@@ -63,14 +63,14 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
       // We first check if we have reached the setPoint, if yes, we switch context
       if (isDispatched) {
         context.become(active(state))
-      } // If the setPoint is not reached, we check if it is time to RampUp
-      else if (PowerPlantState.isRampUp(state.lastRampTime, cfg.rampRateInSeconds)) {
-        self ! PowerPlantState.dispatch(state)
       } else {
         self ! state // try once again to ramp up!
       }
-    case StateRequest =>
-      sender ! state
+    // If we need to throw this plant OutOfService, we do it
+    case OutOfService =>
+      context.become(
+        active(state.copy(signals = PowerPlantState.unAvailableSignals))
+      )
   }
 }
 object RampUpTypePowerPlantSimulator {

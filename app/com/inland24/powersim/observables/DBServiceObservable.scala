@@ -36,6 +36,9 @@ class DBServiceObservable[T] private (refreshInterval: FiniteDuration, fn: => Fu
 
   override def unsafeSubscribeFn(subscriber: Subscriber[T]): Cancelable = {
 
+    // TODO: use passed in ExecutionContext
+    import scala.concurrent.ExecutionContext.Implicits.global
+
     def underlying = {
       val powerPlantsFutSeq = fn.materialize.map {
         case Success(succ) => Some(succ)

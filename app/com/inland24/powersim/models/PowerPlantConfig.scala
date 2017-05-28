@@ -40,7 +40,7 @@ object PowerPlantConfig {
     name: String,
     minPower: Double,
     maxPower: Double,
-    rampSpeed: Double,
+    rampPowerRate: Double,
     rampRateInSeconds: FiniteDuration,
     powerPlantType: PowerPlantType
   ) extends PowerPlantConfig

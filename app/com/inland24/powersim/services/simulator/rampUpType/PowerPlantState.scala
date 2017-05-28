@@ -25,17 +25,19 @@ case class PowerPlantState(
   setPoint: Double,
   lastRampTime: DateTime,
   rampRate: Double,
+  rampRateInSeconds: FiniteDuration,
   signals: Map[String, String]
 )
 
 // TODO: refactor and rewrite
 object PowerPlantState {
 
-  def empty(id: Long, rampRate: Double): PowerPlantState = PowerPlantState(
+  def empty(id: Long, minPower: Double, rampRate: Double, rampRateInSeconds: FiniteDuration): PowerPlantState = PowerPlantState(
     id,
-    setPoint = rampRate,
+    setPoint = minPower,
     DateTime.now(DateTimeZone.UTC),
     rampRate,
+    rampRateInSeconds,
     Map.empty[String, String]
   )
 
@@ -107,34 +109,37 @@ object PowerPlantState {
     }
   }
 
+  // TODO: Move the isRampUp check inside dispatch
   def dispatch(state: PowerPlantState): PowerPlantState = {
-    val collectedSignal = state.signals.collect { // to dispatch, you got to be available
-      case (key, value) if key == isAvailableSignalKey && value.toBoolean => key -> value
-    }
 
-    if (collectedSignal.nonEmpty && state.signals.get(activePowerSignalKey).isDefined) {
-      val currentActivePower = state.signals(activePowerSignalKey).toDouble
-      // check if the newActivePower is greater than setPoint
-      if (currentActivePower + state.rampRate > state.setPoint) { // this means we have fully ramped up to the setPoint
-        state.copy(
-          signals = Map(
-            isDispatchedKey      -> true.toString,
-            activePowerSignalKey -> state.setPoint.toString,
-            isAvailableSignalKey -> true.toString // the plant is still available and not faulty!
-          )
-        )
+    if (isRampUp(state.lastRampTime, state.rampRateInSeconds)) {
+      val collectedSignal = state.signals.collect { // to dispatch, you got to be available
+        case (key, value) if key == isAvailableSignalKey && value.toBoolean => key -> value
       }
-      else {
-        state.copy(
-          signals = Map(
-            isDispatchedKey      -> false.toString,
-            activePowerSignalKey -> (currentActivePower + state.rampRate).toString,
-            isAvailableSignalKey -> true.toString // the plant is still available and not faulty!
+
+      val newState = if (collectedSignal.nonEmpty && state.signals.get(activePowerSignalKey).isDefined) {
+        val currentActivePower = state.signals(activePowerSignalKey).toDouble
+        // check if the newActivePower is greater than setPoint
+        if (currentActivePower + state.rampRate > state.setPoint) { // this means we have fully ramped up to the setPoint
+          state.copy(
+            signals = Map(
+              isDispatchedKey      -> true.toString,
+              activePowerSignalKey -> state.setPoint.toString,
+              isAvailableSignalKey -> true.toString // the plant is still available and not faulty!
+            )
           )
-        )
-      }
-    } else {
-      state
-    }
+        }
+        else {
+          state.copy(
+            signals = Map(
+              isDispatchedKey      -> false.toString,
+              activePowerSignalKey -> (currentActivePower + state.rampRate).toString,
+              isAvailableSignalKey -> true.toString // the plant is still available and not faulty!
+            )
+          )
+        }
+      } else { state }
+      newState
+    } else { state }
   }
 }

@@ -44,7 +44,7 @@ class ThrowAwaySupervisor(globalChannel: GlobalOutputChannel)(implicit s: Schedu
 
   private def initActors() = {
     // 1. Our DB Service actor
-    context.actorOf(DBServiceActor.props(appC))
+    //context.actorOf(DBServiceActor.props(appC))
   }
 
   private def init(): Seq[ConnectableObservable[Long]] = {

@@ -22,7 +22,7 @@ import com.inland24.powersim.models.PowerPlantConfig.OnOffTypeConfig
 class OnOffTypeActor(onOffTypeConfig: OnOffTypeConfig) extends Actor {
 
   override def receive: Receive = {
-
+    case a: String => println("TODO")
   }
 }
 object OnOffTypeActor {

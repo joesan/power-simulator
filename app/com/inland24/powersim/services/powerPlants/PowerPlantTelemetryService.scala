@@ -37,14 +37,14 @@ class PowerPlantTelemetryService private (cfg: AppConfig) {
         "activePower" -> DoubleValue(
           RandomValueGeneratorService.DoubleRandomValue.random(plantConfig.minPower, plantConfig.minPower),
           DateTime.now(DateTimeZone.UTC)
-        ),
-        ""
+        )
       )
     )
   }
 
   def rampUpTypeTelemetrySignals(plantConfig: PowerPlantConfig): PowerPlantResponse = {
-
+    // TODO: implement
+    null
   }
 
   def powerPlantTelemetryFor(plantConfig: PowerPlantConfig): Future[PowerPlantResponse] = plantConfig.powerPlantType match {

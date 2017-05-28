@@ -25,9 +25,8 @@ import com.inland24.powersim.services.database.models.PowerPlantRow
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.reactive.Observable
-import monix.execution.FutureUtils.extensions._
 
-// TODO: pass in zhe execution context
+// TODO: pass in the execution context
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class DBServiceActor(dbConfig: DBConfig) extends Actor {
