@@ -15,6 +15,8 @@
 
 package com.inland24.powersim.models
 
+import java.util.concurrent.TimeUnit
+
 import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType}
 import com.inland24.powersim.services.database.models.PowerPlantRow
 import org.joda.time.{DateTime, DateTimeZone}
@@ -52,7 +54,7 @@ object PowerPlantConfig {
               minPower = powerPlantRow.minPower,
               maxPower = powerPlantRow.maxPower,
               rampPowerRate = powerPlantRow.rampRatePower.get,
-              rampRateInSeconds = powerPlantRow.rampRateSecs.get,
+              rampRateInSeconds = FiniteDuration(powerPlantRow.rampRateSecs.get, TimeUnit.SECONDS),
               powerPlantType = RampUpType
             )
         }

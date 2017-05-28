@@ -16,13 +16,14 @@
 package com.inland24.powersim.services.database
 
 import java.sql.Timestamp
+import java.util.concurrent.TimeUnit
 
 import com.inland24.powersim.models.PowerPlantType
 import com.inland24.powersim.services.database.models.{AddressRow, PowerPlantRow}
 import org.joda.time.{DateTime, DateTimeZone}
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 
 // This schema reads / maps the tables in our database
@@ -46,6 +47,14 @@ final class DBSchema private (val driver: JdbcProfile) {
     powerPlantTypeStr => PowerPlantType.fromString(powerPlantTypeStr)
   )
 
+  /**
+    * Mapping between Int and FiniteDuration in Seconds
+    */
+  implicit def finiteDurationMapping = MappedColumnType.base[FiniteDuration, Long](
+    finiteDuration => finiteDuration.toSeconds,
+    longSeconds    => FiniteDuration(longSeconds, TimeUnit.SECONDS)
+  )
+
   ///////////////// PowerPlant Table
   /**
     * The PowerPlant details are maintained in the PowerPlant table
@@ -58,7 +67,7 @@ final class DBSchema private (val driver: JdbcProfile) {
     def minPower      = column[Double]("minPower")
     def maxPower      = column[Double]("maxPower")
     def powerRampRate = column[Option[Double]]("rampRatePower")
-    def rampRateSecs  = column[Option[FiniteDuration]]("rampRateSecs")
+    def rampRateSecs  = column[Option[Long]]("rampRateSecs")
     def powerPlantType= column[PowerPlantType]("powerPlantType")
     def createdAt     = column[DateTime]("created_at")
     def updatedAt     = column[DateTime]("updated_at")

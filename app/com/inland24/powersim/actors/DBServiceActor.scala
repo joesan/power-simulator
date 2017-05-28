@@ -23,19 +23,19 @@ import com.inland24.powersim.models.PowerPlantConfig
 import com.inland24.powersim.models.PowerPlantConfig.PowerPlantsConfig
 import com.inland24.powersim.observables.DBServiceObservable
 import com.inland24.powersim.services.database.PowerPlantDBService
-import com.inland24.powersim.services.database.models.PowerPlantRow
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.reactive.Observable
-import org.joda.time.{DateTime, DateTimeZone}
+
+import scala.concurrent.duration._
 
 // TODO: pass in the execution context
-import scala.concurrent.ExecutionContext.Implicits.global
-
 class DBServiceActor(dbConfig: DBConfig) extends Actor {
 
+  implicit val timeout: akka.util.Timeout = 5.seconds // TODO: revisit this timeout duration
+
   // This represents the PowerPlantDBService instance
-  val powerPlantDBService = new PowerPlantDBService(dbConfig)
+  val powerPlantDBService = new PowerPlantDBService(dbConfig)(scala.concurrent.ExecutionContext.Implicits.global)
 
   // This will be our subscription that we can use for cancelling!
   val powerPlantDBSubscription = SingleAssignmentCancelable()
@@ -51,6 +51,9 @@ class DBServiceActor(dbConfig: DBConfig) extends Actor {
       ).map(powerPlantRowSeq =>
         PowerPlantConfig.toPowerPlantsConfig(powerPlantRowSeq)
       )
+
+    // TODO: import scheduler from method parameters
+    implicit val scheduler = monix.execution.Scheduler.Implicits.global //scala.concurrent.ExecutionContext.Implicits.global
 
     powerPlantDBSubscription := obs.subscribe { update =>
       (self ? update).map(_ => Continue)

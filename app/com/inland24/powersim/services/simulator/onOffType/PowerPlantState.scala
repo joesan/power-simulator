@@ -24,15 +24,15 @@ object PowerPlantState {
     Map.empty[String, String]
   )
 
+  val isAvailableSignalKey = "isAvailable"
+  val isOnOffSignalKey = "isOnOff"
+  val activePowerSignalKey = "activePower"
+
   val unAvailableSignals = Map(
     activePowerSignalKey -> 0.1.toString, // the power does not matter when the plant is unavailable for steering
     isOnOffSignalKey     -> false.toString,
     isAvailableSignalKey -> false.toString // indicates if the power plant is not available for steering
   )
-
-  val isAvailableSignalKey = "isAvailable"
-  val isOnOffSignalKey = "isOnOff"
-  val activePowerSignalKey = "activePower"
 
   def init(powerPlantState: PowerPlantState, minPower: Double): PowerPlantState = {
     powerPlantState.copy(

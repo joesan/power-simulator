@@ -41,15 +41,15 @@ object PowerPlantState {
     Map.empty[String, String]
   )
 
+  val isAvailableSignalKey = "isAvailable"
+  val isDispatchedKey = "isDispatched"
+  val activePowerSignalKey = "activePower"
+
   val unAvailableSignals = Map(
     activePowerSignalKey -> 0.1.toString, // the power does not matter when the plant is unavailable for steering
     isDispatchedKey         -> false.toString,
     isAvailableSignalKey -> false.toString // indicates if the power plant is not available for steering
   )
-
-  val isAvailableSignalKey = "isAvailable"
-  val isDispatchedKey = "isDispatched"
-  val activePowerSignalKey = "activePower"
 
   def isDispatched(state: PowerPlantState): Boolean = {
     val collectedSignal = state.signals.collect { // to dispatch, you got to be available

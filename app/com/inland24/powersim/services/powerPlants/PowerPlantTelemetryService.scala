@@ -18,7 +18,7 @@ package com.inland24.powersim.services.powerPlants
 import com.inland24.powersim.config.AppConfig
 import com.inland24.powersim.models.PowerPlantConfig.OnOffTypeConfig
 import com.inland24.powersim.models.{PowerPlantConfig, PowerPlantType}
-import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType}
+import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType, UnknownType}
 import com.inland24.powersim.services.powerPlants.PowerPlantResponse.DoubleValue
 import com.inland24.powersim.services.simulator.RandomValueGeneratorService
 import monix.reactive.Observable
@@ -47,9 +47,15 @@ class PowerPlantTelemetryService private (cfg: AppConfig) {
     null
   }
 
+  // tODO
   def powerPlantTelemetryFor(plantConfig: PowerPlantConfig): Future[PowerPlantResponse] = plantConfig.powerPlantType match {
-    case OnOffType  => Future.successful(onOffTypeTelemetrySignals(plantConfig))
-    case RampUpType => Future.successful(rampUpTypeTelemetrySignals(plantConfig))
+    case OnOffType   => Future.successful(onOffTypeTelemetrySignals(plantConfig))
+    case RampUpType  => Future.successful(rampUpTypeTelemetrySignals(plantConfig))
+    case UnknownType => Future.successful(PowerPlantResponse.Error(
+      powerPlantId = plantConfig.id,
+      errorMessage = "Unknown PowerPlantType",
+      timeStamp = DateTime.now(DateTimeZone.UTC)
+    ))
   }
 
   def streamSignalsFor(plantConfig: PowerPlantConfig, interval: FiniteDuration):
