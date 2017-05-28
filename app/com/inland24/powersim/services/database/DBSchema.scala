@@ -22,6 +22,8 @@ import com.inland24.powersim.services.database.models.{AddressRow, PowerPlantRow
 import org.joda.time.{DateTime, DateTimeZone}
 import slick.jdbc.JdbcProfile
 
+import scala.concurrent.duration.FiniteDuration
+
 
 // This schema reads / maps the tables in our database
 final class DBSchema private (val driver: JdbcProfile) {
@@ -46,7 +48,7 @@ final class DBSchema private (val driver: JdbcProfile) {
 
   ///////////////// PowerPlant Table
   /**
-    * The Organization details are maintained in the PowerPlant table
+    * The PowerPlant details are maintained in the PowerPlant table
     */
   class PowerPlantTable(tag: Tag) extends Table[PowerPlantRow](tag, "PowerPlant") {
     def id            = column[Int]("id", O.PrimaryKey)
@@ -55,12 +57,15 @@ final class DBSchema private (val driver: JdbcProfile) {
     def isActive      = column[Boolean]("isActive")
     def minPower      = column[Double]("minPower")
     def maxPower      = column[Double]("maxPower")
+    def powerRampRate = column[Option[Double]]("rampRatePower")
+    def rampRateSecs  = column[Option[FiniteDuration]]("rampRateSecs")
     def powerPlantType= column[PowerPlantType]("powerPlantType")
     def createdAt     = column[DateTime]("created_at")
     def updatedAt     = column[DateTime]("updated_at")
 
     def * = {
-      (id, orgName, orgAddressId, isActive, minPower, maxPower, powerPlantType, createdAt, updatedAt) <>
+      (id, orgName, orgAddressId, isActive, minPower, maxPower,
+        powerRampRate, rampRateSecs, powerPlantType, createdAt, updatedAt) <>
         (PowerPlantRow.tupled, PowerPlantRow.unapply)
     }
   }

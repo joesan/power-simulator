@@ -19,12 +19,15 @@ import akka.actor.{Actor, Props}
 import akka.pattern.ask
 import com.inland24.powersim.actors.DBServiceActor.GetActivePowerPlants
 import com.inland24.powersim.config.DBConfig
+import com.inland24.powersim.models.PowerPlantConfig
+import com.inland24.powersim.models.PowerPlantConfig.PowerPlantsConfig
 import com.inland24.powersim.observables.DBServiceObservable
 import com.inland24.powersim.services.database.PowerPlantDBService
 import com.inland24.powersim.services.database.models.PowerPlantRow
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.reactive.Observable
+import org.joda.time.{DateTime, DateTimeZone}
 
 // TODO: pass in the execution context
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,10 +44,12 @@ class DBServiceActor(dbConfig: DBConfig) extends Actor {
     super.preStart()
 
     // Initialize the DBServiceObservable - for fetching the PowerPlant's and pipe it to self
-    val obs: Observable[Seq[PowerPlantRow]] =
+    val obs: Observable[PowerPlantsConfig] =
       DBServiceObservable.powerPlantDBServiceObservable(
         powerPlantDBService.dbConfig.refreshInterval,
         powerPlantDBService.allPowerPlants(fetchOnlyActive = true)
+      ).map(powerPlantRowSeq =>
+        PowerPlantConfig.toPowerPlantsConfig(powerPlantRowSeq)
       )
 
     powerPlantDBSubscription := obs.subscribe { update =>
@@ -53,13 +58,13 @@ class DBServiceActor(dbConfig: DBConfig) extends Actor {
   }
 
   override def receive: Receive = {
-    case powerPlantRowSeq: Seq[PowerPlantRow] =>
-      context.become(active(powerPlantRowSeq))
+    case powerPlantsConfig: PowerPlantsConfig =>
+      context.become(active(powerPlantsConfig))
   }
 
-  def active(powerPlants: Seq[PowerPlantRow]): Receive = {
-    case powerPlantRowSeq: Seq[PowerPlantRow] =>
-      context.become(active(powerPlantRowSeq))
+  def active(powerPlants: PowerPlantsConfig): Receive = {
+    case allPowerPlantsConfig: PowerPlantsConfig =>
+      context.become(active(allPowerPlantsConfig))
     case GetActivePowerPlants =>
       sender() ! powerPlants
   }

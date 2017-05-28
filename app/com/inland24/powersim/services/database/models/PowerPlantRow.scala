@@ -18,6 +18,8 @@ package com.inland24.powersim.services.database.models
 import com.inland24.powersim.models.PowerPlantType
 import org.joda.time.DateTime
 
+import scala.concurrent.duration.FiniteDuration
+
 
 case class PowerPlantRow(
   id           : Int,
@@ -26,6 +28,8 @@ case class PowerPlantRow(
   isActive     : Boolean,
   minPower     : Double,
   maxPower     : Double,
+  rampRatePower: Option[Double],
+  rampRateSecs : Option[FiniteDuration],
   powerPlantTyp: PowerPlantType,
   createdAt    : DateTime,
   updatedAt    : DateTime

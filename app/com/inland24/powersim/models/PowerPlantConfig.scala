@@ -15,6 +15,10 @@
 
 package com.inland24.powersim.models
 
+import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType}
+import com.inland24.powersim.services.database.models.PowerPlantRow
+import org.joda.time.{DateTime, DateTimeZone}
+
 import scala.concurrent.duration.FiniteDuration
 
 
@@ -26,6 +30,35 @@ sealed trait PowerPlantConfig {
   def powerPlantType: PowerPlantType
 }
 object PowerPlantConfig {
+
+  def toPowerPlantsConfig(seqPowerPlantRow: Seq[PowerPlantRow]): PowerPlantsConfig = {
+    PowerPlantsConfig(
+      DateTime.now(DateTimeZone.UTC),
+      seqPowerPlantRow.map(powerPlantRow => {
+        powerPlantRow.powerPlantTyp match {
+          case _: OnOffTypeConfig =>
+            OnOffTypeConfig(
+              id = powerPlantRow.id,
+              name = powerPlantRow.orgName,
+              minPower = powerPlantRow.minPower,
+              maxPower = powerPlantRow.maxPower,
+              powerPlantType = OnOffType
+            )
+          case _: RampUpTypeConfig
+            if powerPlantRow.rampRatePower.isDefined && powerPlantRow.rampRateSecs.isDefined =>
+            RampUpTypeConfig(
+              id = powerPlantRow.id,
+              name = powerPlantRow.orgName,
+              minPower = powerPlantRow.minPower,
+              maxPower = powerPlantRow.maxPower,
+              rampPowerRate = powerPlantRow.rampRatePower.get,
+              rampRateInSeconds = powerPlantRow.rampRateSecs.get,
+              powerPlantType = RampUpType
+            )
+        }
+      })
+    )
+  }
 
   case class OnOffTypeConfig(
     id: Long,
@@ -44,4 +77,10 @@ object PowerPlantConfig {
     rampRateInSeconds: FiniteDuration,
     powerPlantType: PowerPlantType
   ) extends PowerPlantConfig
+
+  // represents all the PowerPlant's from the database
+  case class PowerPlantsConfig(
+    snapshotDateTime: DateTime,
+    powerPlantConfigSeq: Seq[PowerPlantConfig]
+  )
 }
