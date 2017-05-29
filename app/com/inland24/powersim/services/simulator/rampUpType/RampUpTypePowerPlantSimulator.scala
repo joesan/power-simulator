@@ -85,7 +85,7 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
     */
   def checkRamp(state: PowerPlantState): Receive = {
     case StateRequest =>
-      state
+      sender ! state
     case RampCheck =>
       val isDispatched = PowerPlantState.isDispatched(state)
       // We first check if we have reached the setPoint, if yes, we switch context
