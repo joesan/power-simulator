@@ -18,6 +18,13 @@ package com.inland24.powersim.services.simulator.rampUpType
 import akka.actor.{Actor, Props}
 import com.inland24.powersim.models.PowerPlantConfig.RampUpTypeConfig
 import RampUpTypePowerPlantSimulator._
+import monix.execution.Ack
+import monix.execution.Ack.Continue
+import monix.execution.cancelables.SingleAssignmentCancelable
+import monix.reactive.Observable
+
+import scala.concurrent.Future
+
 
 class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
   extends Actor {
@@ -31,6 +38,19 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
   override def preStart(): Unit = {
     super.preStart()
     self ! Init
+  }
+
+  val subscription = SingleAssignmentCancelable()
+
+  private def rampUpSubscription: Future[Unit] = Future {
+
+    def onNext(long: Long): Future[Ack] = {
+      self ! RampCheck
+      Continue
+    }
+
+    val obs = Observable.intervalAtFixedRate(cfg.rampRateInSeconds)
+    subscription := obs.subscribe(onNext _)
   }
 
   override def receive: Receive = {
@@ -48,28 +68,65 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
     case StateRequest =>
       sender ! state
     case Dispatch(power) => // Dispatch to the specified power value
-      PowerPlantState.dispatch(state.copy(setPoint = power))
-    case Release => // Releasing means the Power plant is no longer in our control // TODO: work on it!!!
-      //PowerPlantState.turnOff(state, minPower = cfg.minPower)
+      rampUpSubscription
+      context.become(
+        checkRamp(
+          PowerPlantState.dispatch(state.copy(setPoint = power))
+        )
+      )
     case OutOfService =>
       state.copy(signals = PowerPlantState.unAvailableSignals)
     case ReturnToService =>
       self ! Init
   }
 
+  /**
+    * This state happens recursively when the PowerPlant ramps up
+    */
   def checkRamp(state: PowerPlantState): Receive = {
+    case StateRequest =>
+      state
     case RampCheck =>
       val isDispatched = PowerPlantState.isDispatched(state)
       // We first check if we have reached the setPoint, if yes, we switch context
       if (isDispatched) {
-        context.become(active(state))
+        // we cancel the subscription first
+        subscription.cancel()
+        context.become(dispatched(state))
       } else {
-        self ! state // try once again to ramp up!
+        // time for another ramp up!
+        context.become(
+          checkRamp(PowerPlantState.dispatch(state))
+        )
       }
+    // If we need to throw this plant OutOfService, we do it
+    case OutOfService =>
+      // but as always, cancel the subscription first
+      subscription.cancel()
+      context.become(
+        active(state.copy(signals = PowerPlantState.unAvailableSignals))
+      )
+  }
+
+  /**
+    * This is the state that is transitioned when the PowerPlant
+    * is fully dispatched
+    */
+  def dispatched(state: PowerPlantState): Receive = {
+    case StateRequest =>
+      sender ! state
     // If we need to throw this plant OutOfService, we do it
     case OutOfService =>
       context.become(
         active(state.copy(signals = PowerPlantState.unAvailableSignals))
+      )
+    case ReturnToNormal =>
+      context.become(
+        active(
+          PowerPlantState.init(
+            PowerPlantState.empty(cfg.id, cfg.minPower, cfg.rampPowerRate, cfg.rampRateInSeconds), cfg.minPower
+          )
+        )
       )
   }
 }
@@ -81,6 +138,7 @@ object RampUpTypePowerPlantSimulator {
   case class  Dispatch(power: Double) extends Message
   case object Release extends Message
   case object RampCheck extends Message
+  case object ReturnToNormal extends Message
 
   // These messages are meant for manually faulting and unfaulting the power plant
   case object OutOfService extends Message
