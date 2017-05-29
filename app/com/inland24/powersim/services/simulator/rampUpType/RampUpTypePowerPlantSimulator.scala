@@ -49,6 +49,9 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
       Continue
     }
 
+    // TODO: use a passed in ExecutionContext
+    import monix.execution.Scheduler.Implicits.global
+
     val obs = Observable.intervalAtFixedRate(cfg.rampRateInSeconds)
     subscription := obs.subscribe(onNext _)
   }
