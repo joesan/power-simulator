@@ -42,15 +42,14 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
 
   val subscription = SingleAssignmentCancelable()
 
+  // TODO: use a passed in ExecutionContext
+  import monix.execution.Scheduler.Implicits.global
   private def rampUpSubscription: Future[Unit] = Future {
 
     def onNext(long: Long): Future[Ack] = {
       self ! RampCheck
       Continue
     }
-
-    // TODO: use a passed in ExecutionContext
-    import monix.execution.Scheduler.Implicits.global
 
     val obs = Observable.intervalAtFixedRate(cfg.rampRateInSeconds)
     subscription := obs.subscribe(onNext _)
