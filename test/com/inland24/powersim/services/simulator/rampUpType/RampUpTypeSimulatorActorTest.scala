@@ -68,7 +68,7 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("MySpec")) with I
     }
 
     "start to RampUp when a Dispatch command is sent" in {
-      within(8.seconds) {
+      within(10.seconds) {
         rampUpTypeSimActor ! Dispatch(rampUpTypeCfg.maxPower)
         expectNoMsg
       }
