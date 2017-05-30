@@ -55,6 +55,10 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("MySpec")) with I
     val rampUpTypeSimActor = system.actorOf(RampUpTypeSimulatorActor.props(rampUpTypeCfg))
 
     "start with minPower when initialized to Active state" in {
+      // We do this shit just so that the Actor has some time to Init
+      within(1.seconds) {
+        expectNoMsg()
+      }
       rampUpTypeSimActor ! StateRequest
       expectMsgPF(5.seconds) {
         case state: PowerPlantState =>
