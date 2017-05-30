@@ -42,7 +42,7 @@ class PowerPlantStateSimulatorSpec extends FlatSpec {
 
     assert(emptyState.rampRate == cfg.rampPowerRate)
     assert(emptyState.powerPlantId == cfg.id)
-    assert(emptyState.lastRampTime.getMillis < DateTime.now(DateTimeZone.UTC).getMillis)
+    assert(emptyState.lastRampTime.getMillis <= DateTime.now(DateTimeZone.UTC).getMillis)
     assert(emptyState.signals.size === 0)
   }
 
