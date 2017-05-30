@@ -42,10 +42,28 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("MySpec")) with I
     powerPlantType = PowerPlantType.OnOffType
   )
 
-  val rampUpTypeSimActor = RampUpTypeSimulatorActor.props(rampUpTypeCfg)
+  private val rampUpTypeSimActor = system.actorOf(RampUpTypeSimulatorActor.props(rampUpTypeCfg))
 
-  "RampUpTypeSimulatorActor" should "start with minPower when in Active state" in {
-    rampUpTypeSimActor ! StateRequest
+  "RampUpTypeSimulatorActor" must {
 
+    "start with minPower when in initialized to Active state" in {
+      val initPowerPlantState = PowerPlantState.init(PowerPlantState.empty(
+        id = rampUpTypeCfg.id,
+        minPower = rampUpTypeCfg.minPower,
+        rampRate = rampUpTypeCfg.rampPowerRate,
+        rampRateInSeconds = rampUpTypeCfg.rampRateInSeconds
+      ), minPower = rampUpTypeCfg.minPower)
+
+      rampUpTypeSimActor ! StateRequest
+      expectMsgPF() {
+        case state: PowerPlantState =>
+          assert(state.signals === initPowerPlantState.signals, "signals did not match")
+          assert(state.powerPlantId === initPowerPlantState.powerPlantId, "powerPlantId did not match")
+          assert(state.rampRate === initPowerPlantState.rampRate, "rampRate did not match")
+          assert(state.setPoint === initPowerPlantState.setPoint, "setPoint did not match")
+        case x: Any => // If I get any other message, I fail
+          fail(s"Expected a PowerPlantState as message response from the Actor, but the response was $x")
+      }
+    }
   }
 }
