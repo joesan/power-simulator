@@ -58,6 +58,7 @@ libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.3.1",
 
   // test
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test",
-  "com.h2database" % "h2" % "1.4.186" % "test"
+  "com.typesafe.akka" %% "akka-testkit" % "2.5.2" % Test,
+  "org.scalatest" %% "scalatest" % "3.0.1" % Test,
+  "com.h2database" % "h2" % "1.4.186" % Test
 )

@@ -17,11 +17,11 @@ package com.inland24.powersim.services.simulator.onOffType
 
 import akka.actor.{Actor, Props}
 import com.inland24.powersim.models.PowerPlantConfig.OnOffTypeConfig
-import OnOffTypePowerPlantSimulator._
+import OnOffTypeSimulatorActor._
 
 
 // TODO: use this Actor to simulate the PowerPlant's
-class OnOffTypePowerPlantSimulator private (cfg: OnOffTypeConfig)
+class OnOffTypeSimulatorActor private (cfg: OnOffTypeConfig)
   extends Actor {
 
   /*
@@ -53,7 +53,7 @@ class OnOffTypePowerPlantSimulator private (cfg: OnOffTypeConfig)
       self ! Init
   }
 }
-object OnOffTypePowerPlantSimulator {
+object OnOffTypeSimulatorActor {
 
   sealed trait Message
   case object Init extends Message
@@ -66,5 +66,5 @@ object OnOffTypePowerPlantSimulator {
   case object ReturnToService extends Message
 
   def props(cfg: OnOffTypeConfig): Props =
-    Props(new OnOffTypePowerPlantSimulator(cfg))
+    Props(new OnOffTypeSimulatorActor(cfg))
 }

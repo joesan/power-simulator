@@ -17,7 +17,7 @@ package com.inland24.powersim.services.simulator.rampUpType
 
 import akka.actor.{Actor, Props}
 import com.inland24.powersim.models.PowerPlantConfig.RampUpTypeConfig
-import RampUpTypePowerPlantSimulator._
+import RampUpTypeSimulatorActor._
 import monix.execution.Ack
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.SingleAssignmentCancelable
@@ -26,7 +26,7 @@ import monix.reactive.Observable
 import scala.concurrent.Future
 
 
-class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
+class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
   extends Actor {
 
   /*
@@ -132,7 +132,7 @@ class RampUpTypePowerPlantSimulator private (cfg: RampUpTypeConfig)
       )
   }
 }
-object RampUpTypePowerPlantSimulator {
+object RampUpTypeSimulatorActor {
 
   sealed trait Message
   case object Init extends Message
@@ -147,5 +147,5 @@ object RampUpTypePowerPlantSimulator {
   case object ReturnToService extends Message
 
   def props(cfg: RampUpTypeConfig): Props =
-    Props(new RampUpTypePowerPlantSimulator(cfg))
+    Props(new RampUpTypeSimulatorActor(cfg))
 }
