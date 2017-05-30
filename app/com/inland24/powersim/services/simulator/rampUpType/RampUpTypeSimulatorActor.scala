@@ -15,7 +15,7 @@
 
 package com.inland24.powersim.services.simulator.rampUpType
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorLogging, Props}
 import com.inland24.powersim.models.PowerPlantConfig.RampUpTypeConfig
 import RampUpTypeSimulatorActor._
 import monix.execution.Ack
@@ -27,7 +27,7 @@ import scala.concurrent.Future
 
 
 class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
-  extends Actor {
+  extends Actor with ActorLogging {
 
   /*
    * 1. Take the config,
@@ -42,6 +42,11 @@ class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
 
   val subscription = SingleAssignmentCancelable()
 
+  private def cancelSubscription(): Unit = {
+    log.info(s"Cancelling subscription to RampUp the PowerPlant with id = ${cfg.id}")
+    subscription.cancel()
+  }
+
   // TODO: use a passed in ExecutionContext
   import monix.execution.Scheduler.Implicits.global
   private def rampUpSubscription: Future[Unit] = Future {
@@ -52,6 +57,7 @@ class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
     }
 
     val obs = Observable.intervalAtFixedRate(cfg.rampRateInSeconds)
+    log.info(s"Subscribed to RampUp the PowerPlant with id = ${cfg.id}")
     subscription := obs.subscribe(onNext _)
   }
 
@@ -77,7 +83,9 @@ class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
         )
       )
     case OutOfService =>
-      state.copy(signals = PowerPlantState.unAvailableSignals)
+      context.become(
+        active(state.copy(signals = PowerPlantState.unAvailableSignals))
+      )
     case ReturnToService =>
       self ! Init
   }
@@ -93,7 +101,7 @@ class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
       // We first check if we have reached the setPoint, if yes, we switch context
       if (isDispatched) {
         // we cancel the subscription first
-        subscription.cancel()
+        cancelSubscription()
         context.become(dispatched(state))
       } else {
         // time for another ramp up!
@@ -104,7 +112,7 @@ class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
     // If we need to throw this plant OutOfService, we do it
     case OutOfService =>
       // but as always, cancel the subscription first
-      subscription.cancel()
+      cancelSubscription()
       context.become(
         active(state.copy(signals = PowerPlantState.unAvailableSignals))
       )

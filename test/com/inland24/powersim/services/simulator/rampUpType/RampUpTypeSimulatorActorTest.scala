@@ -50,13 +50,13 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("MySpec")) with I
     rampRateInSeconds = rampUpTypeCfg.rampRateInSeconds
   ), minPower = rampUpTypeCfg.minPower)
 
-  private val rampUpTypeSimActor = system.actorOf(RampUpTypeSimulatorActor.props(rampUpTypeCfg))
-
   "RampUpTypeSimulatorActor" must {
 
-    "start with minPower when in initialized to Active state" in {
+    val rampUpTypeSimActor = system.actorOf(RampUpTypeSimulatorActor.props(rampUpTypeCfg))
+
+    "start with minPower when initialized to Active state" in {
       rampUpTypeSimActor ! StateRequest
-      expectMsgPF() {
+      expectMsgPF(5.seconds) {
         case state: PowerPlantState =>
           assert(state.signals === initPowerPlantState.signals, "signals did not match")
           assert(state.powerPlantId === initPowerPlantState.powerPlantId, "powerPlantId did not match")
@@ -97,6 +97,79 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("MySpec")) with I
             "setPoint did not match"
           )
         case x: Any => // If I get any other message, I fail
+          fail(s"Expected a PowerPlantState as message response from the Actor, but the response was $x")
+      }
+    }
+
+    "ignore multiple Dispatch commands and should respond only to the first dispatch command" in {
+      within(10.seconds) {
+        // expected activePower should be this one here
+        rampUpTypeSimActor ! Dispatch(rampUpTypeCfg.maxPower)
+
+        // this dispatch command should be ignored!!
+        rampUpTypeSimActor ! Dispatch(10000.0)
+        expectNoMsg
+      }
+      rampUpTypeSimActor ! StateRequest
+      expectMsgPF() {
+        case state: PowerPlantState =>
+          // check the signals
+          assert(
+            state.signals(activePowerSignalKey).toDouble === 800.0,
+            "expecting activePower to be 800.0, but was not the case"
+          )
+          assert(
+            state.signals(isDispatchedSignalKey).toBoolean,
+            "expected isDispatched signal to be true, but was false instead"
+          )
+          assert(
+            state.signals(isAvailableSignalKey).toBoolean,
+            "expected isAvailable signal to be true, but was false instead"
+          )
+          assert(
+            state.rampRate === initPowerPlantState.rampRate,
+            "rampRate did not match"
+          )
+          assert(
+            state.setPoint === 800.0,
+            "setPoint did not match"
+          )
+        case x: Any => // If I get any other message, I fail
+          fail(s"Expected a PowerPlantState as message response from the Actor, but the response was $x")
+      }
+    }
+
+    "send the PowerPlant into OutOfService when OutOfService message is sent during Active" in {
+      within(5.seconds) {
+        rampUpTypeSimActor ! OutOfService
+        expectNoMsg()
+      }
+
+      rampUpTypeSimActor ! StateRequest
+      expectMsgPF(5.seconds) {
+        case state: PowerPlantState =>
+          assert(state.signals === PowerPlantState.unAvailableSignals)
+        case x: Any =>
+          fail(s"Expected a PowerPlantState as message response from the Actor, but the response was $x")
+      }
+    }
+
+    "throw the PowerPlant into OutOfService when OutOfService message is sent during RampUp" in {
+      // 1. Send a Dispatch message
+      within(2.seconds) {
+        rampUpTypeSimActor ! Dispatch(rampUpTypeCfg.maxPower)
+        expectNoMsg()
+      }
+
+      // 2. Send a OutOfService message
+      rampUpTypeSimActor ! OutOfService
+
+      // 3. Send a StateRequest message
+      rampUpTypeSimActor ! StateRequest
+      expectMsgPF() {
+        case state: PowerPlantState =>
+          assert(state.signals === PowerPlantState.unAvailableSignals)
+        case x: Any =>
           fail(s"Expected a PowerPlantState as message response from the Actor, but the response was $x")
       }
     }
