@@ -54,7 +54,7 @@ class PowerPlantStateSimulatorSpec extends FlatSpec {
 
     assert(initState.signals.size === 3) // expecting 3 elements in the signals Map
     initState.signals.foreach {
-      case (key, value) if key == PowerPlantState.isDispatchedKey      => assert(!value.toBoolean)
+      case (key, value) if key == PowerPlantState.isDispatchedSignalKey      => assert(!value.toBoolean)
       case (key, value) if key == PowerPlantState.isAvailableSignalKey => assert(value.toBoolean)
       case (key, value) if key == PowerPlantState.activePowerSignalKey => assert(value.toDouble === cfg.minPower)
     }

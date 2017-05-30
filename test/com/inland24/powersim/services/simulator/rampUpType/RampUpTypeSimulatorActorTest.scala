@@ -20,6 +20,7 @@ import akka.testkit.{ImplicitSender, TestKit}
 import com.inland24.powersim.services.simulator.rampUpType.RampUpTypeSimulatorActor._
 import com.inland24.powersim.models.PowerPlantConfig.RampUpTypeConfig
 import com.inland24.powersim.models.PowerPlantType
+import com.inland24.powersim.services.simulator.rampUpType.PowerPlantState._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -32,28 +33,28 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("MySpec")) with I
     TestKit.shutdownActorSystem(system)
   }
 
-  val rampUpTypeCfg = RampUpTypeConfig(
+  private val rampUpTypeCfg = RampUpTypeConfig(
     id = 1,
     name = "someConfig",
-    minPower = 10.0,
-    maxPower = 100.0,
+    minPower = 400.0,
+    maxPower = 800.0,
     rampPowerRate = 100.0,
     rampRateInSeconds = 2.seconds,
     powerPlantType = PowerPlantType.OnOffType
   )
+
+  private val initPowerPlantState = PowerPlantState.init(PowerPlantState.empty(
+    id = rampUpTypeCfg.id,
+    minPower = rampUpTypeCfg.minPower,
+    rampRate = rampUpTypeCfg.rampPowerRate,
+    rampRateInSeconds = rampUpTypeCfg.rampRateInSeconds
+  ), minPower = rampUpTypeCfg.minPower)
 
   private val rampUpTypeSimActor = system.actorOf(RampUpTypeSimulatorActor.props(rampUpTypeCfg))
 
   "RampUpTypeSimulatorActor" must {
 
     "start with minPower when in initialized to Active state" in {
-      val initPowerPlantState = PowerPlantState.init(PowerPlantState.empty(
-        id = rampUpTypeCfg.id,
-        minPower = rampUpTypeCfg.minPower,
-        rampRate = rampUpTypeCfg.rampPowerRate,
-        rampRateInSeconds = rampUpTypeCfg.rampRateInSeconds
-      ), minPower = rampUpTypeCfg.minPower)
-
       rampUpTypeSimActor ! StateRequest
       expectMsgPF() {
         case state: PowerPlantState =>
@@ -61,6 +62,40 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("MySpec")) with I
           assert(state.powerPlantId === initPowerPlantState.powerPlantId, "powerPlantId did not match")
           assert(state.rampRate === initPowerPlantState.rampRate, "rampRate did not match")
           assert(state.setPoint === initPowerPlantState.setPoint, "setPoint did not match")
+        case x: Any => // If I get any other message, I fail
+          fail(s"Expected a PowerPlantState as message response from the Actor, but the response was $x")
+      }
+    }
+
+    "start to RampUp when a Dispatch command is sent" in {
+      within(8.seconds) {
+        rampUpTypeSimActor ! Dispatch(rampUpTypeCfg.maxPower)
+        expectNoMsg
+      }
+      rampUpTypeSimActor ! StateRequest
+      expectMsgPF() {
+        case state: PowerPlantState =>
+          // check the signals
+          assert(
+            state.signals(activePowerSignalKey).toDouble === 800.0,
+            "expecting activePower to be 800.0, but was not the case"
+          )
+          assert(
+            state.signals(isDispatchedSignalKey).toBoolean,
+            "expected isDispatched signal to be true, but was false instead"
+          )
+          assert(
+            state.signals(isAvailableSignalKey).toBoolean,
+            "expected isAvailable signal to be true, but was false instead"
+          )
+          assert(
+            state.rampRate === initPowerPlantState.rampRate,
+            "rampRate did not match"
+          )
+          assert(
+            state.setPoint === 800.0,
+            "setPoint did not match"
+          )
         case x: Any => // If I get any other message, I fail
           fail(s"Expected a PowerPlantState as message response from the Actor, but the response was $x")
       }
