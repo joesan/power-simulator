@@ -30,6 +30,7 @@ import scala.util.Try
   * Type-safe configuration used throughout the application.
   */
 final case class AppConfig(
+  environment: String,
   database: DBConfig
 )
 final case class DBConfig(
@@ -61,6 +62,7 @@ object AppConfig {
 
   def load(config: Config): AppConfig = {
     AppConfig(
+      environment = config.getString("environment"),
       database = DBConfig(
         url = config.getString("db.url"),
         user = Try(config.getString("db.user")).toOption.filterNot(_.isEmpty),

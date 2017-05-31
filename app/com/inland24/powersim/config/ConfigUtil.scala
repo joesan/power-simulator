@@ -41,7 +41,7 @@ object ConfigUtil {
             val name = s"application.${envName.toLowerCase}.conf"
             ConfigSource.FromResource(name)
           case None =>
-            ConfigSource.FromResource("application.dev.conf")
+            ConfigSource.FromResource("application.conf")
         }
     }
 
