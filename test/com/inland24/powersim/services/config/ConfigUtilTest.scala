@@ -21,6 +21,11 @@ import org.scalatest.FlatSpec
 
 class ConfigUtilTest extends FlatSpec {
 
+  "loadFromEnv" should "load the default config when nothing is specified from the environment" in {
+    val config = ConfigUtil.loadFromEnv()
+    assert(config.getString("environment") === "default")
+  }
+
   "loadFromEnv" should "load the test config when set as a system property" in {
     System.setProperty("config.file", "conf/application.test.conf")
     val config = ConfigUtil.loadFromEnv()
@@ -33,10 +38,5 @@ class ConfigUtilTest extends FlatSpec {
     val config = ConfigUtil.loadFromEnv()
     assert(config.getString("environment") === "test")
     assert(config.getString("db.driver") === "org.h2.Driver")
-  }
-
-  "loadFromEnv" should "load the default config when nothing is specified from the environment" in {
-    val config = ConfigUtil.loadFromEnv()
-    assert(config.getString("environment") === "default")
   }
 }
