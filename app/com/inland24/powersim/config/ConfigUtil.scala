@@ -52,9 +52,6 @@ object ConfigUtil {
 
       case ref @ ConfigSource.FromResource(name) =>
         ConfigFactory.load(name).resolve()
-
-      case _ =>
-        ConfigFactory.load().resolve()
     }
   }
 }

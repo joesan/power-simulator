@@ -31,18 +31,31 @@ class AppConfigTest extends FlatSpec {
     refreshInterval = 5.seconds
   )
 
-  "AppConfig#load" should "load the default configuration when nothing is specified in the environment" in {
+  private def clearSystemProperty() = {
     System.clearProperty("config.file")
     System.clearProperty("ENV")
     System.clearProperty("env")
+  }
+
+  "AppConfig#load" should "load the default configuration when nothing is specified in the environment" in {
+    clearSystemProperty()
     val appConfig = AppConfig.load()
     assert(appConfig.environment === "default")
   }
 
   "AppConfig#load" should "load the test configuration when specified in the environment" in {
+    clearSystemProperty()
     System.setProperty("ENV", "test")
     val appConfig = AppConfig.load()
     assert(appConfig.environment === "test")
     assert(appConfig.database === dbConfigTest)
+  }
+
+  "AppConfig#load" should "load the dev configuration when specified in the environment" in {
+    clearSystemProperty()
+    System.setProperty("env", "dev")
+    val appConfig = AppConfig.load()
+    assert(appConfig.environment === "dev")
+    assert(appConfig.database.driver === "org.sqlite.JDBC")
   }
 }
