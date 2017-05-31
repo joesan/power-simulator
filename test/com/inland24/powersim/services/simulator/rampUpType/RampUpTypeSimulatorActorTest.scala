@@ -209,6 +209,8 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("RampUpTypeSimula
 
     // PowerPlant # ReturnToNormal tests
     "return the PowerPlant to Normal when ReturnToNormal message is sent in dispatched state" in {
+      // To avoid confusion and the tests failing, we create a new actor instance for this test
+      val rampUpTypeSimActor = system.actorOf(RampUpTypeSimulatorActor.props(rampUpTypeCfg))
       // 1. Send a Dispatch message
       within(12.seconds) {
         rampUpTypeSimActor ! Dispatch(rampUpTypeCfg.maxPower)
@@ -216,14 +218,14 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("RampUpTypeSimula
       }
 
       // 2. Send a ReturnToNormal message
-      within(2.seconds) {
+      within(1.seconds) {
         rampUpTypeSimActor ! ReturnToNormal
         expectNoMsg()
       }
 
       // 3. Send a StateRequest message
       rampUpTypeSimActor ! StateRequest
-      expectMsgPF(3.seconds) {
+      expectMsgPF() {
         case state: PowerPlantState =>
           assert(state.signals === initPowerPlantState.signals, "signals did not match")
           assert(state.powerPlantId === initPowerPlantState.powerPlantId, "powerPlantId did not match")
