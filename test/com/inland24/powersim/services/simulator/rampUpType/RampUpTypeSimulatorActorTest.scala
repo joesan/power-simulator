@@ -216,7 +216,7 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("RampUpTypeSimula
       }
 
       // 2. Send a ReturnToNormal message
-      within(1.seconds) {
+      within(3.seconds) {
         rampUpTypeSimActor ! ReturnToNormal
         expectNoMsg()
       }
