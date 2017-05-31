@@ -20,15 +20,11 @@ import com.inland24.powersim.models.PowerPlantConfig.OnOffTypeConfig
 import OnOffTypeSimulatorActor._
 
 
-// TODO: use this Actor to simulate the PowerPlant's
 class OnOffTypeSimulatorActor private (cfg: OnOffTypeConfig)
   extends Actor {
 
   /*
-   * 1. Take the config,
-   * 2. Set up default values
-   * 3. Prepare the case class that represents the state of this values
-   * 4. send a self message with this new state of values
+   * Initialize the PowerPlant
    */
   override def preStart(): Unit = {
     super.preStart()
@@ -37,19 +33,28 @@ class OnOffTypeSimulatorActor private (cfg: OnOffTypeConfig)
 
   override def receive: Receive = {
     case Init =>
-      context.become(active(PowerPlantState.init(PowerPlantState.empty(cfg.id), cfg.minPower)))
+      context.become(
+        active(PowerPlantState.init(PowerPlantState.empty(cfg.id), cfg.minPower))
+      )
   }
 
   def active(state: PowerPlantState): Receive = {
     case StateRequest =>
       sender ! state
     case TurnOn => // Turning On means deliver max power
-      PowerPlantState.turnOn(state, maxPower = cfg.maxPower)
+      context.become(
+        active(PowerPlantState.turnOn(state, maxPower = cfg.maxPower))
+      )
     case TurnOff => // Turning Off means returning to min power
-      PowerPlantState.turnOff(state, minPower = cfg.minPower)
+      context.become(
+        active(PowerPlantState.turnOff(state, minPower = cfg.minPower))
+      )
     case OutOfService =>
-      state.copy(signals = PowerPlantState.unAvailableSignals)
+      context.become(
+        active(state.copy(signals = PowerPlantState.unAvailableSignals))
+      )
     case ReturnToService =>
+      context.become(receive)
       self ! Init
   }
 }

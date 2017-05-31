@@ -30,14 +30,18 @@ class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
   extends Actor with ActorLogging {
 
   /*
-   * 1. Take the config,
-   * 2. Set up default values
-   * 3. Prepare the case class that represents the state of this values
-   * 4. send a self message with this new state of values
+   * Initialize the Actor instance
    */
   override def preStart(): Unit = {
     super.preStart()
+    log.info("in preStart(...) of the actor")
     self ! Init
+  }
+
+  override def postStop(): Unit = {
+    super.postStop()
+    log.info("in postStop(...) of the actor")
+    cancelSubscription()
   }
 
   val subscription = SingleAssignmentCancelable()
@@ -49,8 +53,7 @@ class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
 
   // TODO: use a passed in ExecutionContext
   import monix.execution.Scheduler.Implicits.global
-  private def rampUpSubscription: Future[Unit] = Future {
-
+  private def startSubscription: Future[Unit] = Future {
     def onNext(long: Long): Future[Ack] = {
       self ! RampCheck
       Continue
@@ -76,7 +79,7 @@ class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
     case StateRequest =>
       sender ! state
     case Dispatch(power) => // Dispatch to the specified power value
-      rampUpSubscription
+      startSubscription
       context.become(
         checkRamp(
           PowerPlantState.dispatch(state.copy(setPoint = power))
@@ -87,11 +90,14 @@ class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
         active(state.copy(signals = PowerPlantState.unAvailableSignals))
       )
     case ReturnToService =>
+      context.become(receive)
       self ! Init
   }
 
   /**
     * This state happens recursively when the PowerPlant ramps up
+    * The recursivity happens until the PowerPlant is fully ramped
+    * up. The recursivity is governed by the Monix Observable!
     */
   def checkRamp(state: PowerPlantState): Receive = {
     case StateRequest =>
@@ -131,13 +137,8 @@ class RampUpTypeSimulatorActor private (cfg: RampUpTypeConfig)
         active(state.copy(signals = PowerPlantState.unAvailableSignals))
       )
     case ReturnToNormal =>
-      context.become(
-        active(
-          PowerPlantState.init(
-            PowerPlantState.empty(cfg.id, cfg.minPower, cfg.rampPowerRate, cfg.rampRateInSeconds), cfg.minPower
-          )
-        )
-      )
+      context.become(receive)
+      self ! Init
   }
 }
 object RampUpTypeSimulatorActor {
@@ -150,7 +151,7 @@ object RampUpTypeSimulatorActor {
   case object RampCheck extends Message
   case object ReturnToNormal extends Message
 
-  // These messages are meant for manually faulting and unfaulting the power plant
+  // These messages are meant for manually faulting and un-faulting the power plant
   case object OutOfService extends Message
   case object ReturnToService extends Message
 

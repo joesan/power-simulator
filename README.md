@@ -37,7 +37,7 @@ Follow the steps below to import the project into IntelliJ
 1. Clone the project from: 
    git clone https://github.com/joesan/power-simulator.git
    
-2. Fire up IntelliJ and import the project:
+2. Fire up IntelliJ and import the project
    
 3. If you are opening IntelliJ for the first time, set up the Scala library in IntelliJ
 ```
@@ -56,6 +56,23 @@ To run tests from the command line, do the following:
 ```
 To run any specific tests from within IntelliJ, simply right click the test that you wish you
 run and click Run
+
+### Running the application
+
+This application is built as a web application using the Play framework. To run the application,
+perform the following steps:
+
+```
+1. Open a terminal and navigate to the project root folder 
+   
+2. Issue the following command:
+   sbt run
+   
+3. Navigate to the following url on your favorite browser:
+   http://localhost:9000
+   
+   [TODO...] document!
+```
 
 ## Deployment
 
