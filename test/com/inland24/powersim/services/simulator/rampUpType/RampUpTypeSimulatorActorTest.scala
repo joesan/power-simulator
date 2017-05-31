@@ -216,14 +216,14 @@ class RampUpTypeSimulatorActorTest extends TestKit(ActorSystem("RampUpTypeSimula
       }
 
       // 2. Send a ReturnToNormal message
-      within(3.seconds) {
+      within(2.seconds) {
         rampUpTypeSimActor ! ReturnToNormal
         expectNoMsg()
       }
 
       // 3. Send a StateRequest message
       rampUpTypeSimActor ! StateRequest
-      expectMsgPF() {
+      expectMsgPF(3.seconds) {
         case state: PowerPlantState =>
           assert(state.signals === initPowerPlantState.signals, "signals did not match")
           assert(state.powerPlantId === initPowerPlantState.powerPlantId, "powerPlantId did not match")
