@@ -32,6 +32,9 @@ class AppConfigTest extends FlatSpec {
   )
 
   "AppConfig#load" should "load the default configuration when nothing is specified in the environment" in {
+    System.clearProperty("config.file")
+    System.clearProperty("ENV")
+    System.clearProperty("env")
     val appConfig = AppConfig.load()
     assert(appConfig.environment === "default")
   }
