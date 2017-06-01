@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-package com.inland24.powersim.services.config
+package com.inland24.powersim.config
 
-import com.inland24.powersim.config.{AppConfig, DBConfig}
 import org.scalatest.FlatSpec
 
 import scala.concurrent.duration._

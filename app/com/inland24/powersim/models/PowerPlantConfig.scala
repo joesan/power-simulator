@@ -33,35 +33,6 @@ sealed trait PowerPlantConfig {
 }
 object PowerPlantConfig {
 
-  def toPowerPlantsConfig(seqPowerPlantRow: Seq[PowerPlantRow]): PowerPlantsConfig = {
-    PowerPlantsConfig(
-      DateTime.now(DateTimeZone.UTC),
-      seqPowerPlantRow.map(powerPlantRow => {
-        powerPlantRow.powerPlantTyp match {
-          case _: OnOffTypeConfig =>
-            OnOffTypeConfig(
-              id = powerPlantRow.id,
-              name = powerPlantRow.orgName,
-              minPower = powerPlantRow.minPower,
-              maxPower = powerPlantRow.maxPower,
-              powerPlantType = OnOffType
-            )
-          case _: RampUpTypeConfig
-            if powerPlantRow.rampRatePower.isDefined && powerPlantRow.rampRateSecs.isDefined =>
-            RampUpTypeConfig(
-              id = powerPlantRow.id,
-              name = powerPlantRow.orgName,
-              minPower = powerPlantRow.minPower,
-              maxPower = powerPlantRow.maxPower,
-              rampPowerRate = powerPlantRow.rampRatePower.get,
-              rampRateInSeconds = FiniteDuration(powerPlantRow.rampRateSecs.get, TimeUnit.SECONDS),
-              powerPlantType = RampUpType
-            )
-        }
-      })
-    )
-  }
-
   case class OnOffTypeConfig(
     id: Long,
     name: String,

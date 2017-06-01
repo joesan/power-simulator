@@ -23,6 +23,7 @@ import com.inland24.powersim.models.PowerPlantConfig
 import com.inland24.powersim.models.PowerPlantConfig.PowerPlantsConfig
 import com.inland24.powersim.observables.DBServiceObservable
 import com.inland24.powersim.services.database.PowerPlantDBService
+import com.inland24.powersim.models
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.reactive.Observable
@@ -48,8 +49,8 @@ class DBServiceActor(dbConfig: DBConfig) extends Actor {
       DBServiceObservable.powerPlantDBServiceObservable(
         powerPlantDBService.dbConfig.refreshInterval,
         powerPlantDBService.allPowerPlants(fetchOnlyActive = true)
-      ).map(powerPlantRowSeq =>
-        PowerPlantConfig.toPowerPlantsConfig(powerPlantRowSeq)
+      ).map(
+        powerPlantRowSeq => models.toPowerPlantsConfig(powerPlantRowSeq)
       )
 
     // TODO: import scheduler from method parameters

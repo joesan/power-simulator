@@ -33,8 +33,7 @@ class PowerPlantDBService(val dbConfig: DBConfig)(
   import schema.driver.api._
 
   // PowerPlant related CRUD services //
-  def allPowerPlants(
-      fetchOnlyActive: Boolean = false): Future[Seq[PowerPlantRow]] = {
+  def allPowerPlants(fetchOnlyActive: Boolean = false): Future[Seq[PowerPlantRow]] = {
     val query =
       if (fetchOnlyActive)
         PowerPlantTable.activePowerPlants

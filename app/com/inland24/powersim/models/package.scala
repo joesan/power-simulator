@@ -15,11 +15,49 @@
 
 package com.inland24.powersim
 
+import java.util.concurrent.TimeUnit
+
 import com.inland24.powersim.models.MyMessages.{Destroy, Init, Tick}
+import com.inland24.powersim.models.PowerPlantConfig.{OnOffTypeConfig, PowerPlantsConfig, RampUpTypeConfig}
+import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType}
+import com.inland24.powersim.services.database.models.PowerPlantRow
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json._
+
+import scala.concurrent.duration.FiniteDuration
 
 
 package object models {
+
+  // implicit conversion from database row types to model types
+  implicit def toPowerPlantsConfig(seqPowerPlantRow: Seq[PowerPlantRow]): PowerPlantsConfig = {
+    PowerPlantsConfig(
+      DateTime.now(DateTimeZone.UTC),
+      seqPowerPlantRow.map(powerPlantRow => {
+        powerPlantRow.powerPlantTyp match {
+          case _: OnOffTypeConfig =>
+            OnOffTypeConfig(
+              id = powerPlantRow.id,
+              name = powerPlantRow.orgName,
+              minPower = powerPlantRow.minPower,
+              maxPower = powerPlantRow.maxPower,
+              powerPlantType = OnOffType
+            )
+          case _: RampUpTypeConfig
+            if powerPlantRow.rampRatePower.isDefined && powerPlantRow.rampRateSecs.isDefined =>
+            RampUpTypeConfig(
+              id = powerPlantRow.id,
+              name = powerPlantRow.orgName,
+              minPower = powerPlantRow.minPower,
+              maxPower = powerPlantRow.maxPower,
+              rampPowerRate = powerPlantRow.rampRatePower.get,
+              rampRateInSeconds = FiniteDuration(powerPlantRow.rampRateSecs.get, TimeUnit.SECONDS),
+              powerPlantType = RampUpType
+            )
+        }
+      })
+    )
+  }
 
   implicit object MyMessagesWrites extends Writes[MyMessages] {
 

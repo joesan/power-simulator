@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-package com.inland24.powersim.services.config
+package com.inland24.powersim.config
 
-import com.inland24.powersim.config.ConfigUtil
 import org.scalatest.FlatSpec
 
 
