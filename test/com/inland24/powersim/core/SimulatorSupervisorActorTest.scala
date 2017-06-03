@@ -61,7 +61,7 @@ class SimulatorSupervisorActorTest extends TestKit(ActorSystem("SimulatorSupervi
           val powerPlantCfgSeq = activePowerPlants.powerPlantConfigSeq
           // each element in the sequence should have an actor instance up and running
           powerPlantCfgSeq.foreach {
-            case powerPlantCfg: PowerPlantConfig =>
+            powerPlantCfg: PowerPlantConfig =>
               val actorRef = system.actorSelection(self.path / s"asset-simulator-${powerPlantCfg.id}")
                 .resolveOne(2.seconds)
               actorRef.materialize.map {
