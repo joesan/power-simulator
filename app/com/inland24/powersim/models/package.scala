@@ -73,4 +73,25 @@ package object models {
         )
     }
   }
+
+  // Trait representing the occurrence of events for a PowerPlant in the database
+  sealed trait PowerPlantEvent
+
+  // A PowerPlant could be updated in the database
+  case class PowerPlantUpdateEvent(
+    id: Long,
+    powerPlantCfg: PowerPlantConfig
+  ) extends PowerPlantEvent
+
+  // A PowerPlant could be newly created in the database
+  case class PowerPlantCreateEvent(
+    id: Long,
+    powerPlantConfig: PowerPlantConfig
+  ) extends PowerPlantEvent
+
+  // A PowerPlant could be deleted in the database
+  case class PowerPlantDeleteEvent(
+    id: Long,
+    powerPlantConfig: PowerPlantConfig
+  ) extends PowerPlantEvent
 }
