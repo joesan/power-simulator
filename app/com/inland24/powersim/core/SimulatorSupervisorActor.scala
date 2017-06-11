@@ -32,6 +32,16 @@ import scala.util.{Failure, Success}
 import scala.concurrent.duration._
 
 // TODO: What happens if any of the child actor dies???
+/**
+  * This actor is responsible for starting, stopping all
+  * the simulators. We have one simulator per PowerPlant
+  * where the type of the simulator is determined by the
+  * type of the PowerPlant. This actor additionally also
+  * listens for update events from the DBServiceActor
+  * which sends events depending on if a new PowerPlant
+  * is added, updated or deleted in the database.
+  * @param dbActor
+  */
 class SimulatorSupervisorActor(dbActor: ActorRef) extends Actor
   with ActorLogging {
 
@@ -87,6 +97,7 @@ class SimulatorSupervisorActor(dbActor: ActorRef) extends Actor
         case Success(powerPlantsCfg) =>
           startSimulatorActors(powerPlantsCfg.powerPlantConfigSeq)
         case Failure(fail) =>
+          // TODO: What do we do when we fail....
       }
   }
 }
