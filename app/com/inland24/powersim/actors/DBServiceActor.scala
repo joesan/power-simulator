@@ -96,8 +96,17 @@ object DBServiceActor {
     }
 
     def updatedEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): Seq[PowerPlantEvent[PowerPlantConfig]] = {
-      
+      // TODO: implement
+      Seq.empty
     }
+
+    def createdEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): Seq[PowerPlantEvent[PowerPlantConfig]] = {
+      newMap.keySet.filterNot(oldMap.keySet)
+        .map(id => PowerPlantDeleteEvent(id, newMap(id))) // No way that this is going to throw element not found exception
+        .toSeq
+    }
+
+    deletedEvents(oldMap, newMap) ++ updatedEvents(oldMap, newMap) ++ createdEvents(oldMap, newMap)
   }
 
   sealed trait Message
