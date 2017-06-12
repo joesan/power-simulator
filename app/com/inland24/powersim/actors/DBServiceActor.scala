@@ -85,6 +85,12 @@ object DBServiceActor {
 
   type PowerPlantConfigMap = Map[Long, PowerPlantConfig]
 
+  /**
+    * Transform a given sequence of old and new state of PowerPlantConfig
+    * to a sequence of events. These events will determine how the actors
+    * representing the PowerPlant might be stopped, started or re-started
+    * depending on whether the PowerPlant is deleted, created or updated.
+    */
   def toEvents(oldCfg: PowerPlantsConfig, newCfg: PowerPlantsConfig): Seq[PowerPlantEvent[PowerPlantConfig]] = {
     val oldMap = oldCfg.powerPlantConfigSeq.map(elem => elem.id -> elem).toMap
     val newMap = newCfg.powerPlantConfigSeq.map(elem => elem.id -> elem).toMap
