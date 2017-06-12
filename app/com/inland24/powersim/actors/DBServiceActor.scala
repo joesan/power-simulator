@@ -23,7 +23,7 @@ import com.inland24.powersim.models.PowerPlantConfig.PowerPlantsConfig
 import com.inland24.powersim.observables.DBServiceObservable
 import com.inland24.powersim.services.database.PowerPlantDBService
 import com.inland24.powersim.models
-import com.inland24.powersim.models.{PowerPlantConfig, PowerPlantDeleteEvent, PowerPlantEvent}
+import com.inland24.powersim.models.{PowerPlantConfig, PowerPlantDeleteEvent, PowerPlantEvent, PowerPlantUpdateEvent}
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.reactive.Observable
@@ -96,8 +96,11 @@ object DBServiceActor {
     }
 
     def updatedEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): Seq[PowerPlantEvent[PowerPlantConfig]] = {
-      // TODO: implement
-      Seq.empty
+      oldMap.keySet.intersect(newMap.keySet)
+        .collect {
+          case id if !oldMap(id).equals(newMap(id)) => PowerPlantUpdateEvent(id, newMap(id))
+        }
+        .toSeq
     }
 
     def createdEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): Seq[PowerPlantEvent[PowerPlantConfig]] = {
