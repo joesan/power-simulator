@@ -15,15 +15,15 @@
 
 package com.inland24.powersim.actors
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.pattern.ask
 import com.inland24.powersim.actors.DBServiceActor.GetActivePowerPlants
 import com.inland24.powersim.config.DBConfig
-import com.inland24.powersim.models.PowerPlantConfig
 import com.inland24.powersim.models.PowerPlantConfig.PowerPlantsConfig
 import com.inland24.powersim.observables.DBServiceObservable
 import com.inland24.powersim.services.database.PowerPlantDBService
 import com.inland24.powersim.models
+import com.inland24.powersim.models.{PowerPlantConfig, PowerPlantDeleteEvent, PowerPlantEvent}
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.reactive.Observable
@@ -31,14 +31,18 @@ import monix.reactive.Observable
 import scala.concurrent.duration._
 
 // TODO: pass in the execution context
-class DBServiceActor(dbConfig: DBConfig) extends Actor {
+// TODO: start emitting events for updates
+class DBServiceActor(dbConfig: DBConfig) extends Actor with ActorLogging {
 
   implicit val timeout: akka.util.Timeout = 5.seconds // TODO: revisit this timeout duration
 
-  // This represents the PowerPlantDBService instance
-  val powerPlantDBService = new PowerPlantDBService(dbConfig)(scala.concurrent.ExecutionContext.Implicits.global)
+  // TODO: import scheduler from method parameters
+  implicit val scheduler = monix.execution.Scheduler.Implicits.global
 
-  // This will be our subscription that we can use for cancelling!
+  // This represents the PowerPlantDBService instance
+  val powerPlantDBService = new PowerPlantDBService(dbConfig)(scheduler)
+
+  // This will be our subscription to fetch from the database
   val powerPlantDBSubscription = SingleAssignmentCancelable()
 
   override def preStart(): Unit = {
@@ -53,12 +57,16 @@ class DBServiceActor(dbConfig: DBConfig) extends Actor {
         powerPlantRowSeq => models.toPowerPlantsConfig(powerPlantRowSeq)
       )
 
-    // TODO: import scheduler from method parameters
-    implicit val scheduler = monix.execution.Scheduler.Implicits.global //scala.concurrent.ExecutionContext.Implicits.global
-
     powerPlantDBSubscription := obs.subscribe { update =>
       (self ? update).map(_ => Continue)
     }
+  }
+
+  override def postStop(): Unit = {
+    super.postStop()
+
+    log.info("Cancelling DB lookup subscription")
+    powerPlantDBSubscription.cancel()
   }
 
   override def receive: Receive = {
@@ -74,6 +82,23 @@ class DBServiceActor(dbConfig: DBConfig) extends Actor {
   }
 }
 object DBServiceActor {
+
+  type PowerPlantConfigMap = Map[Long, PowerPlantConfig]
+
+  def toEvents(oldCfg: PowerPlantsConfig, newCfg: PowerPlantsConfig): Seq[PowerPlantEvent[PowerPlantConfig]] = {
+    val oldMap = oldCfg.powerPlantConfigSeq.map(elem => elem.id -> elem).toMap
+    val newMap = newCfg.powerPlantConfigSeq.map(elem => elem.id -> elem).toMap
+
+    def deletedEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): Seq[PowerPlantEvent[PowerPlantConfig]] = {
+      oldMap.keySet.filterNot(newMap.keySet)
+        .map(id => PowerPlantDeleteEvent(id, oldMap(id))) // No way that this is going to throw element not found exception
+        .toSeq
+    }
+
+    def updatedEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): Seq[PowerPlantEvent[PowerPlantConfig]] = {
+      
+    }
+  }
 
   sealed trait Message
   case object GetActivePowerPlants extends Message

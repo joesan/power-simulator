@@ -15,11 +15,8 @@
 
 package com.inland24.powersim.models
 
-import java.util.concurrent.TimeUnit
 
-import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType}
-import com.inland24.powersim.services.database.models.PowerPlantRow
-import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.DateTime
 
 import scala.concurrent.duration.FiniteDuration
 
