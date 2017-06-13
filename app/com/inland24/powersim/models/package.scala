@@ -24,6 +24,7 @@ import com.inland24.powersim.services.database.models.PowerPlantRow
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json._
 
+import scala.language.implicitConversions
 import scala.concurrent.duration.FiniteDuration
 
 
