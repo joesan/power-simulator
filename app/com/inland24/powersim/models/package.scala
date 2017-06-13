@@ -73,28 +73,4 @@ package object models {
         )
     }
   }
-
-  // Trait representing the occurrence of events for a PowerPlant in the database
-  sealed trait PowerPlantEvent[T <: PowerPlantConfig] {
-    def id: Long
-    def powerPlantCfg: T
-  }
-
-  // A PowerPlant could be updated in the database
-  case class PowerPlantUpdateEvent[T](
-    id: Long,
-    powerPlantCfg: T
-  ) extends PowerPlantEvent[T]
-
-  // A PowerPlant could be newly created in the database
-  case class PowerPlantCreateEvent[T](
-    id: Long,
-    powerPlantCfg: T
-  ) extends PowerPlantEvent[T]
-
-  // A PowerPlant could be deleted in the database
-  case class PowerPlantDeleteEvent[T](
-    id: Long,
-    powerPlantCfg: T
-  ) extends PowerPlantEvent[T]
 }

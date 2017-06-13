@@ -23,7 +23,8 @@ import com.inland24.powersim.models.PowerPlantConfig.PowerPlantsConfig
 import com.inland24.powersim.observables.DBServiceObservable
 import com.inland24.powersim.services.database.PowerPlantDBService
 import com.inland24.powersim.models
-import com.inland24.powersim.models.{PowerPlantConfig, PowerPlantDeleteEvent, PowerPlantEvent, PowerPlantUpdateEvent}
+import com.inland24.powersim.models.PowerPlantEvent.{PowerPlantCreateEvent, PowerPlantDeleteEvent, PowerPlantUpdateEvent}
+import com.inland24.powersim.models.{PowerPlantConfig, PowerPlantEvent}
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.reactive.Observable
@@ -34,7 +35,8 @@ import scala.concurrent.duration._
 // TODO: start emitting events for updates
 class DBServiceActor(dbConfig: DBConfig) extends Actor with ActorLogging {
 
-  implicit val timeout: akka.util.Timeout = 5.seconds // TODO: revisit this timeout duration
+  // TODO: revisit this timeout duration, should come from parameters
+  implicit val timeout: akka.util.Timeout = 5.seconds
 
   // TODO: import scheduler from method parameters
   implicit val scheduler = monix.execution.Scheduler.Implicits.global
@@ -84,6 +86,7 @@ class DBServiceActor(dbConfig: DBConfig) extends Actor with ActorLogging {
 object DBServiceActor {
 
   type PowerPlantConfigMap = Map[Long, PowerPlantConfig]
+  type PowerPlantEvents = Seq[PowerPlantEvent[PowerPlantConfig]]
 
   /**
     * Transform a given sequence of old and new state of PowerPlantConfig
@@ -95,13 +98,13 @@ object DBServiceActor {
     val oldMap = oldCfg.powerPlantConfigSeq.map(elem => elem.id -> elem).toMap
     val newMap = newCfg.powerPlantConfigSeq.map(elem => elem.id -> elem).toMap
 
-    def deletedEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): Seq[PowerPlantEvent[PowerPlantConfig]] = {
+    def deletedEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): PowerPlantEvents = {
       oldMap.keySet.filterNot(newMap.keySet)
-        .map(id => PowerPlantDeleteEvent(id, oldMap(id))) // No way that this is going to throw element not found exception
+        .map(id => PowerPlantDeleteEvent(id, oldMap(id))) // No way this is going to throw element not found exception
         .toSeq
     }
 
-    def updatedEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): Seq[PowerPlantEvent[PowerPlantConfig]] = {
+    def updatedEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): PowerPlantEvents = {
       oldMap.keySet.intersect(newMap.keySet)
         .collect {
           case id if !oldMap(id).equals(newMap(id)) => PowerPlantUpdateEvent(id, newMap(id))
@@ -109,9 +112,9 @@ object DBServiceActor {
         .toSeq
     }
 
-    def createdEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): Seq[PowerPlantEvent[PowerPlantConfig]] = {
+    def createdEvents(oldMap: PowerPlantConfigMap, newMap: PowerPlantConfigMap): PowerPlantEvents = {
       newMap.keySet.filterNot(oldMap.keySet)
-        .map(id => PowerPlantDeleteEvent(id, newMap(id))) // No way that this is going to throw element not found exception
+        .map(id => PowerPlantCreateEvent(id, newMap(id))) // No way this is going to throw element not found exception
         .toSeq
     }
 
