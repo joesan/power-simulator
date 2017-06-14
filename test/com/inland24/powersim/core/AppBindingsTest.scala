@@ -15,27 +15,18 @@
 
 package com.inland24.powersim.core
 
-import akka.actor.{ ActorRef, ActorSystem }
-import akka.stream.Materializer
+import org.scalatest.{FlatSpec, Matchers}
 
-trait AppBindings {
 
-  def actorSystem: ActorSystem
-  def materializer: Materializer
+class AppBindingsTest extends FlatSpec with Matchers {
 
-  def supervisorActor: ActorRef
-  def globalChannel: GlobalOutputChannel
-}
-object AppBindings {
+  behavior of "AppBindings"
 
-  def apply(system: ActorSystem, actorMaterializer: Materializer): AppBindings = new AppBindings {
+  "AppBindings" should "initialize" in {
+    val appBindings = AppBindings.apply()
 
-    override val actorSystem = system
-    override val materializer = actorMaterializer
-    override val globalChannel: GlobalOutputChannel =
-      GlobalOutputChannel.apply
-
-    override val supervisorActor: ActorRef =
-      system.actorOf(ThrowAwaySupervisor.props(globalChannel))
+    appBindings.actorSystem     should not be null
+    appBindings.globalChannel   should not be null
+    appBindings.supervisorActor should not be null
   }
 }
