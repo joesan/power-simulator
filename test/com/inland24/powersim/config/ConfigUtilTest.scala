@@ -15,10 +15,22 @@
 
 package com.inland24.powersim.config
 
-import org.scalatest.FlatSpec
+import org.scalatest.{BeforeAndAfterAll, FlatSpec}
 
 
-class ConfigUtilTest extends FlatSpec {
+class ConfigUtilTest extends FlatSpec with BeforeAndAfterAll {
+
+  override def beforeAll() = {
+    System.clearProperty("config.file")
+    System.clearProperty("env")
+    System.clearProperty("ENV")
+  }
+
+  override def afterAll() = {
+    System.clearProperty("config.file")
+    System.clearProperty("env")
+    System.clearProperty("ENV")
+  }
 
   "loadFromEnv" should "load the default config when nothing is specified from the environment" in {
     val config = ConfigUtil.loadFromEnv()
