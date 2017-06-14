@@ -21,7 +21,7 @@ import akka.testkit.{ImplicitSender, TestKit}
 import akka.util.Timeout
 import com.inland24.powersim.actors.DBServiceActor
 import com.inland24.powersim.config.AppConfig
-import com.inland24.powersim.models.{PowerPlantConfig}
+import com.inland24.powersim.models.PowerPlantConfig
 import com.inland24.powersim.models.PowerPlantConfig.PowerPlantsConfig
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import monix.execution.FutureUtils.extensions._
@@ -29,7 +29,7 @@ import monix.execution.FutureUtils.extensions._
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
 
-
+// TODO complete the tests
 class SimulatorSupervisorActorTest extends TestKit(ActorSystem("SimulatorSupervisorActorTest"))
   with ImplicitSender with WordSpecLike with Matchers with BeforeAndAfterAll {
 
@@ -51,6 +51,7 @@ class SimulatorSupervisorActorTest extends TestKit(ActorSystem("SimulatorSupervi
     val dbActorRef = system.actorOf(DBServiceActor.props(appCfg.database))
     val simSupervisorActor = system.actorOf(SimulatorSupervisorActor.props(dbActorRef))
 
+    pending
     "initialize simulator actors for all active PowerPlant's" in {
 
       implicit val timeout = Timeout(3.seconds)
