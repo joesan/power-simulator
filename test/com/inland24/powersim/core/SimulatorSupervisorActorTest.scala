@@ -51,10 +51,11 @@ class SimulatorSupervisorActorTest extends TestKit(ActorSystem("SimulatorSupervi
     val dbActorRef = system.actorOf(DBServiceActor.props(appCfg.database))
     val simSupervisorActor = system.actorOf(SimulatorSupervisorActor.props(dbActorRef))
 
+    // TODO: revist this test!
     pending
     "initialize simulator actors for all active PowerPlant's" in {
 
-      implicit val timeout = Timeout(3.seconds)
+      implicit val timeout = Timeout(5.seconds)
 
       (dbActorRef ? DBServiceActor.GetActivePowerPlants).mapTo[PowerPlantsConfig]
       expectMsgPF(5.seconds) {
