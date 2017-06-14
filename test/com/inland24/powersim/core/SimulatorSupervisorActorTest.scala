@@ -21,7 +21,7 @@ import akka.testkit.{ImplicitSender, TestKit}
 import akka.util.Timeout
 import com.inland24.powersim.actors.DBServiceActor
 import com.inland24.powersim.config.AppConfig
-import com.inland24.powersim.models.PowerPlantConfig
+import com.inland24.powersim.models.{PowerPlantConfig}
 import com.inland24.powersim.models.PowerPlantConfig.PowerPlantsConfig
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import monix.execution.FutureUtils.extensions._

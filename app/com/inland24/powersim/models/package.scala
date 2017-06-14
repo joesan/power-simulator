@@ -18,8 +18,8 @@ package com.inland24.powersim
 import java.util.concurrent.TimeUnit
 
 import com.inland24.powersim.models.MyMessages.{Destroy, Init, Tick}
-import com.inland24.powersim.models.PowerPlantConfig.{OnOffTypeConfig, PowerPlantsConfig, RampUpTypeConfig}
-import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType}
+import com.inland24.powersim.models.PowerPlantConfig._
+import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType, UnknownType}
 import com.inland24.powersim.services.database.models.PowerPlantRow
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json._
@@ -36,7 +36,7 @@ package object models {
       DateTime.now(DateTimeZone.UTC),
       seqPowerPlantRow.map(powerPlantRow => {
         powerPlantRow.powerPlantTyp match {
-          case _: OnOffTypeConfig =>
+          case OnOffType =>
             OnOffTypeConfig(
               id = powerPlantRow.id,
               name = powerPlantRow.orgName,
@@ -44,7 +44,7 @@ package object models {
               maxPower = powerPlantRow.maxPower,
               powerPlantType = OnOffType
             )
-          case _: RampUpTypeConfig
+          case RampUpType
             if powerPlantRow.rampRatePower.isDefined && powerPlantRow.rampRateSecs.isDefined =>
             RampUpTypeConfig(
               id = powerPlantRow.id,
@@ -54,6 +54,15 @@ package object models {
               rampPowerRate = powerPlantRow.rampRatePower.get,
               rampRateInSeconds = FiniteDuration(powerPlantRow.rampRateSecs.get, TimeUnit.SECONDS),
               powerPlantType = RampUpType
+            )
+          // If it is of RampUpType but rampPowerRate and rampRateInSeconds are not specified, we error
+          case RampUpType =>
+            UnknownConfig(
+              id = powerPlantRow.id,
+              name = powerPlantRow.orgName,
+              minPower = powerPlantRow.minPower,
+              maxPower = powerPlantRow.maxPower,
+              powerPlantType = UnknownType
             )
         }
       })

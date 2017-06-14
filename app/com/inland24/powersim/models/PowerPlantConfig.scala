@@ -48,6 +48,14 @@ object PowerPlantConfig {
     powerPlantType: PowerPlantType
   ) extends PowerPlantConfig
 
+  case class UnknownConfig(
+    id: Long,
+    name: String,
+    minPower: Double,
+    maxPower: Double,
+    powerPlantType: PowerPlantType
+  ) extends PowerPlantConfig
+
   // represents all the PowerPlant's from the database
   case class PowerPlantsConfig(
     snapshotDateTime: DateTime,

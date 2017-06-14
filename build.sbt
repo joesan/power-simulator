@@ -7,6 +7,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 scalaVersion := "2.11.7"
 
 scalacOptions ++= Seq(
+  "-language:implicitConversions",
   // turns all warnings into errors ;-)
   "-target:jvm-1.8",
   "-language:reflectiveCalls",
