@@ -15,19 +15,24 @@
 
 package com.inland24.powersim.core
 
-import akka.actor.{Actor, ActorKilledException, ActorLogging, ActorRef, OneForOneStrategy, Props, SupervisorStrategy}
+import akka.actor.{Actor, ActorKilledException, ActorLogging, ActorRef, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy}
 import akka.pattern.ask
+import akka.pattern.GracefulStopSupport
 import akka.util.Timeout
 import com.inland24.powersim.actors.DBServiceActor
 import com.inland24.powersim.config.AppConfig
 import com.inland24.powersim.core.SimulatorSupervisorActor.Init
 import com.inland24.powersim.models.PowerPlantConfig
 import com.inland24.powersim.models.PowerPlantConfig.{OnOffTypeConfig, PowerPlantsConfig, RampUpTypeConfig}
+import com.inland24.powersim.models.PowerPlantEvent.PowerPlantDeleteEvent
 import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType}
 import com.inland24.powersim.services.simulator.onOffType.OnOffTypeSimulatorActor
 import com.inland24.powersim.services.simulator.rampUpType.RampUpTypeSimulatorActor
+import monix.execution.Ack
+import monix.execution.Ack.Continue
 import monix.execution.FutureUtils.extensions._
 
+import scala.async.Async.{async, await}
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
@@ -71,6 +76,27 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
         SupervisorStrategy.Resume
     }
 
+  private def stopActors(events: Seq[PowerPlantDeleteEvent[PowerPlantConfig]]): Future[Ack] = async {
+    events.foreach {
+      case event => {
+        await(fetchActor(event.powerPlantCfg.id).materialize) match {
+          case Success(actorRef) =>
+            log.info(s"Stopping Actor for PowerPlant with id = ${event.powerPlantCfg.id}")
+            context.stop(actorRef)
+            Continue
+          case Failure(fail) =>
+            log.error(s"Could not fetch Actor instance for PowerPlant =${event.powerPlantCfg.id} because of: $fail")
+            Continue
+        }
+      }
+    }
+  }
+
+  private def fetchActor(id: Long): Future[ActorRef] = {
+    context.actorSelection(s"powerPlant-$id").resolveOne(2.seconds)
+  }
+
+  // TODO: Write methods for restarting and stopping actors
   private def startSimulatorActors(powerPlantCfgSeq: Seq[PowerPlantConfig]) = {
     powerPlantCfgSeq.foreach {
       case powerPlantCfg if powerPlantCfg.powerPlantType == OnOffType =>
