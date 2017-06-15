@@ -19,6 +19,7 @@ import akka.actor.{Actor, ActorKilledException, ActorLogging, ActorRef, OneForOn
 import akka.pattern.ask
 import akka.util.Timeout
 import com.inland24.powersim.actors.DBServiceActor
+import com.inland24.powersim.config.AppConfig
 import com.inland24.powersim.core.SimulatorSupervisorActor.Init
 import com.inland24.powersim.models.PowerPlantConfig
 import com.inland24.powersim.models.PowerPlantConfig.{OnOffTypeConfig, PowerPlantsConfig, RampUpTypeConfig}
@@ -40,12 +41,14 @@ import scala.concurrent.duration._
   * listens for update events from the DBServiceActor
   * which sends events depending on if a new PowerPlant
   * is added, updated or deleted in the database.
-  * @param dbActor
   */
-class SimulatorSupervisorActor(dbActor: ActorRef) extends Actor
+class SimulatorSupervisorActor(config: AppConfig) extends Actor
   with ActorLogging {
 
   implicit val timeout = Timeout(3.seconds)
+
+  // Our DBServiceActor reference
+  val dbActor = context.actorOf(DBServiceActor.props(config.database))
 
   override def preStart() = {
     super.preStart()
@@ -105,6 +108,6 @@ object SimulatorSupervisorActor {
 
   case object Init
 
-  def props(dbActorRef: ActorRef): Props =
-    Props(new SimulatorSupervisorActor(dbActorRef))
+  def props(config: AppConfig): Props =
+    Props(new SimulatorSupervisorActor(config))
 }

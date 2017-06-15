@@ -49,7 +49,6 @@ class SimulatorSupervisorActorTest extends TestKit(ActorSystem("SimulatorSupervi
     // We test against the test environment
     val appCfg = loadTestAppConfig
     val dbActorRef = system.actorOf(DBServiceActor.props(appCfg.database))
-    val simSupervisorActor = system.actorOf(SimulatorSupervisorActor.props(dbActorRef))
 
     // TODO: revist this test!
     pending

@@ -15,7 +15,6 @@
 
 package com.inland24.powersim.observables
 
-import com.inland24.powersim.services.database.models.PowerPlantRow
 import monix.execution.Cancelable
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
@@ -31,35 +30,35 @@ import scala.util.{Failure, Success}
   * stream depends on the caller and is governed by the function that
   * he passes to the constructor
   */
-class DBServiceObservable[T] private (refreshInterval: FiniteDuration, fn: => Future[T])
-  extends Observable[T] {
+class DBServiceObservable[T, U] private (refreshInterval: FiniteDuration, fn: => Future[T])(mapper: T => U)
+  extends Observable[U] {
 
-  override def unsafeSubscribeFn(subscriber: Subscriber[T]): Cancelable = {
+  override def unsafeSubscribeFn(subscriber: Subscriber[U]): Cancelable = {
 
     // TODO: use passed in ExecutionContext
     import scala.concurrent.ExecutionContext.Implicits.global
 
     def underlying = {
-      val powerPlantsFutSeq = fn.materialize.map {
+      val someFuture = fn.materialize.map {
         case Success(succ) => Some(succ)
         case Failure(_) => None // TODO: log the errors!!!
       }
 
-      Observable.fromFuture(powerPlantsFutSeq)
+      Observable.fromFuture(someFuture)
     }
 
     Observable
       .intervalAtFixedRate(refreshInterval)
       .flatMap(_ => underlying)
-      .collect { case Some(powerPlantsSeq) => powerPlantsSeq }
+      .collect { case Some(powerPlantsSeq) => mapper(powerPlantsSeq) }
       .distinctUntilChanged
       .unsafeSubscribeFn(subscriber)
   }
 }
 object DBServiceObservable {
 
-  def powerPlantDBServiceObservable(
+  def powerPlantDBServiceObservable[T, U](
     refreshInterval: FiniteDuration,
-    fn: Future[Seq[PowerPlantRow]]): DBServiceObservable[Seq[PowerPlantRow]] =
-    new DBServiceObservable[Seq[PowerPlantRow]](refreshInterval, fn)
+    fn: Future[T])(mapper: T => U): DBServiceObservable[T, U] =
+    new DBServiceObservable[T, U](refreshInterval, fn)(mapper)
 }

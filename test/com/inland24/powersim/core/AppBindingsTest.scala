@@ -15,18 +15,27 @@
 
 package com.inland24.powersim.core
 
-import org.scalatest.{FlatSpec, Matchers}
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.testkit.TestKit
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 
-class AppBindingsTest extends FlatSpec with Matchers {
+class AppBindingsTest extends TestKit(ActorSystem("AppBindingsTest"))
+  with Matchers with WordSpecLike with BeforeAndAfterAll {
 
-  behavior of "AppBindings"
+  override def afterAll(): Unit = {
+    super.afterAll()
+    system.terminate()
+  }
 
-  "AppBindings" should "initialize" in {
-    val appBindings = AppBindings.apply()
+  "AppBindings" must {
+    "initialize" in {
+      val appBindings = AppBindings.apply(system, ActorMaterializer.apply())
 
-    appBindings.actorSystem     should not be null
-    appBindings.globalChannel   should not be null
-    appBindings.supervisorActor should not be null
+      appBindings.actorSystem     should not be null
+      appBindings.globalChannel   should not be null
+      appBindings.supervisorActor should not be null
+    }
   }
 }
