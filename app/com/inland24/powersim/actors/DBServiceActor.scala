@@ -25,7 +25,6 @@ import com.inland24.powersim.services.database.PowerPlantDBService
 import com.inland24.powersim.models
 import com.inland24.powersim.models.PowerPlantEvent.{PowerPlantCreateEvent, PowerPlantDeleteEvent, PowerPlantUpdateEvent}
 import com.inland24.powersim.models.{PowerPlantConfig, PowerPlantEvent}
-import com.inland24.powersim.services.database.models.PowerPlantRow
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.SingleAssignmentCancelable
 import org.joda.time.{DateTime, DateTimeZone}

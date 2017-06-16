@@ -50,6 +50,7 @@ class DBServiceObservable[T, U] private (refreshInterval: FiniteDuration, fn: =>
     Observable
       .intervalAtFixedRate(refreshInterval)
       .flatMap(_ => underlying)
+      // We map it to the target type we need!
       .collect { case Some(powerPlantsSeq) => mapper(powerPlantsSeq) }
       .distinctUntilChanged
       .unsafeSubscribeFn(subscriber)

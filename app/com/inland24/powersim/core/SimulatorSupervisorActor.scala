@@ -15,25 +15,23 @@
 
 package com.inland24.powersim.core
 
-import akka.actor.{Actor, ActorKilledException, ActorLogging, ActorRef, OneForOneStrategy, PoisonPill, Props, SupervisorStrategy}
-import akka.pattern.ask
-import akka.pattern.GracefulStopSupport
+import akka.actor.{Actor, ActorKilledException, ActorLogging, ActorRef, Kill, OneForOneStrategy, Props, SupervisorStrategy, Terminated}
+import akka.pattern.pipe
 import akka.util.Timeout
 import com.inland24.powersim.actors.DBServiceActor
 import com.inland24.powersim.config.AppConfig
 import com.inland24.powersim.core.SimulatorSupervisorActor.Init
 import com.inland24.powersim.models.PowerPlantConfig
-import com.inland24.powersim.models.PowerPlantConfig.{OnOffTypeConfig, PowerPlantsConfig, RampUpTypeConfig}
-import com.inland24.powersim.models.PowerPlantEvent.PowerPlantDeleteEvent
-import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType}
+import com.inland24.powersim.models.PowerPlantConfig.OnOffTypeConfig
+import com.inland24.powersim.models.PowerPlantEvent.{PowerPlantCreateEvent, PowerPlantDeleteEvent, PowerPlantUpdateEvent}
+import com.inland24.powersim.models.PowerPlantType.OnOffType
 import com.inland24.powersim.services.simulator.onOffType.OnOffTypeSimulatorActor
-import com.inland24.powersim.services.simulator.rampUpType.RampUpTypeSimulatorActor
 import monix.execution.Ack
 import monix.execution.Ack.Continue
 import monix.execution.FutureUtils.extensions._
 
 import scala.async.Async.{async, await}
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise, TimeoutException}
 import scala.util.{Failure, Success}
 import scala.concurrent.duration._
 
@@ -49,6 +47,8 @@ import scala.concurrent.duration._
   */
 class SimulatorSupervisorActor(config: AppConfig) extends Actor
   with ActorLogging {
+
+  val simulatorActorNamePrefix = "powerPlant-simulator-actor-"
 
   implicit val timeout = Timeout(3.seconds)
 
@@ -78,56 +78,114 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
 
   private def stopActors(events: Seq[PowerPlantDeleteEvent[PowerPlantConfig]]): Future[Ack] = async {
     events.foreach {
-      case event => {
-        await(fetchActor(event.powerPlantCfg.id).materialize) match {
-          case Success(actorRef) =>
-            log.info(s"Stopping Actor for PowerPlant with id = ${event.powerPlantCfg.id}")
-            context.stop(actorRef)
-            Continue
-          case Failure(fail) =>
-            log.error(s"Could not fetch Actor instance for PowerPlant =${event.powerPlantCfg.id} because of: $fail")
-            Continue
-        }
-      }
+      case event => stopActor(event)
+    }
+    Continue
+  }
+
+  private def stopActor(event: PowerPlantDeleteEvent[PowerPlantConfig]): Future[Ack] = async {
+    await(fetchActor(event.powerPlantCfg.id).materialize) match {
+      case Success(actorRef) =>
+        log.info(s"Stopping Actor for PowerPlant with id = ${event.powerPlantCfg.id}")
+        context.stop(actorRef)
+        Continue
+      case Failure(fail) =>
+        log.error(s"Could not fetch Actor instance for PowerPlant =${event.powerPlantCfg.id} because of: $fail")
+        Continue
     }
   }
 
   private def fetchActor(id: Long): Future[ActorRef] = {
-    context.actorSelection(s"powerPlant-$id").resolveOne(2.seconds)
+    context.actorSelection(s"$simulatorActorNamePrefix$id").resolveOne(2.seconds)
   }
 
-  // TODO: Write methods for restarting and stopping actors
-  private def startSimulatorActors(powerPlantCfgSeq: Seq[PowerPlantConfig]) = {
-    powerPlantCfgSeq.foreach {
-      case powerPlantCfg if powerPlantCfg.powerPlantType == OnOffType =>
-        selectActor(s"asset-simulator-${powerPlantCfg.id}").materialize.map {
-          case Success(actorRef) => s"asset simulator actor with id ${powerPlantCfg.id} is already running $actorRef"
-          case Failure(_) =>
-            context.actorOf(
-              OnOffTypeSimulatorActor.props(powerPlantCfg.asInstanceOf[OnOffTypeConfig]),
-              s"asset-simulator-${powerPlantCfg.id}"
+  def waitForStart(source: ActorRef): Receive = {
+    case Continue =>
+      source ! Continue
+      context.become(receive)
+
+    case someShit =>
+      log.error(s"Unexpected message $someShit received while waiting for an actor to be started")
+  }
+
+  private def waitForStop(source: ActorRef, stoppedP: Promise[Continue]): Receive = {
+    case Continue =>
+      source ! Continue
+      context.become(receive)
+
+    case Terminated(actorRef) =>
+      context.unwatch(actorRef)
+      stoppedP.success(Continue)
+
+    case someShit =>
+      log.error(s"Unexpected message $someShit received while waiting for an actor to be stopped")
+  }
+
+  // ***********************************************************************************
+  // Methods to Start and Stop PowerPlant Actor instances
+  // ***********************************************************************************
+  private def startPowerPlant(id: Long, cfg: PowerPlantConfig): Future[Ack] = cfg.powerPlantType match {
+    case OnOffType =>
+      context.actorOf(
+        OnOffTypeSimulatorActor.props(cfg.asInstanceOf[OnOffTypeConfig]),
+        s"$simulatorActorNamePrefix$id"
+      )
+      Continue
+
+    case OnOffType =>
+      context.actorOf(
+        OnOffTypeSimulatorActor.props(cfg.asInstanceOf[OnOffTypeConfig]),
+        s"$simulatorActorNamePrefix$id"
+      )
+      Continue
+  }
+
+  private def stopPowerPlant(id: Long, stoppedP: Promise[Continue]): Future[Ack] = async {
+    await(fetchActor(id).materialize) match {
+      case Success(actorRef) =>
+        log.info(s"Stopping Actor for PowerPlant with id = $id")
+        context.watch(actorRef)
+        context.stop(actorRef)
+
+        // If the Promise is not completed within 3 seconds or in other words, if we
+        // try to force Kill the actor
+        val stopActorFallback = stoppedP.future.timeout(3.seconds).recoverWith {
+          case _: TimeoutException =>
+            log.error(
+              s"Time out waiting for PowerPlant actor $id to stop, so sending a Kill message"
             )
+
+            actorRef ! Kill
+            stoppedP.future
         }
-      case powerPlantCfg if powerPlantCfg.powerPlantType == RampUpType =>
-        selectActor(s"asset-simulator-${powerPlantCfg.id}").materialize.map {
-          case Success(resolved) => s"asset simulator actor with id ${powerPlantCfg.id} is already running"
-          case Failure(_) =>
-            context.actorOf(
-              RampUpTypeSimulatorActor.props(powerPlantCfg.asInstanceOf[RampUpTypeConfig]),
-              s"asset-simulator-${powerPlantCfg.id}"
-            )
-        }
+
+        await(stopActorFallback)
+      case Failure(fail) =>
+        log.error(s"Could not fetch Actor instance for PowerPlant = $id because of: $fail")
+        Continue
     }
   }
+  // ***********************************************************************************
 
   override def receive: Receive = {
-    case Init =>
-      (dbActor ? DBServiceActor.GetActivePowerPlants).mapTo[PowerPlantsConfig].materialize.map {
-        case Success(powerPlantsCfg) =>
-          startSimulatorActors(powerPlantsCfg.powerPlantConfigSeq)
-        case Failure(fail) =>
-          // TODO: What do we do when we fail....
-      }
+    case PowerPlantCreateEvent(id, powerPlantCfg) =>
+      log.info(s"Starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
+
+      // Start the PowerPlant, and pipe the message to self
+      startPowerPlant(id, powerPlantCfg).pipeTo(self)
+      context.become(waitForStart(sender())) // The sender is the SimulatorSupervisorActor
+
+    case PowerPlantUpdateEvent(id, powerPlantCfg) =>
+      log.info(s"Re-starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
+
+      // TODO: Stop and Re-start the actor instance
+
+    case PowerPlantDeleteEvent(id, powerPlantCfg) =>
+      log.info(s"Stopping PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
+
+      val stoppedP = Promise[Continue]()
+      stopPowerPlant(id, stoppedP).pipeTo(self)
+      context.become(waitForStop(sender(), stoppedP))
   }
 }
 object SimulatorSupervisorActor {

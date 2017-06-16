@@ -18,8 +18,12 @@ package com.inland24.powersim.models
 import com.inland24.powersim.models.PowerPlantConfig.{OnOffTypeConfig, RampUpTypeConfig, UnknownConfig}
 import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType, UnknownType}
 import com.inland24.powersim.services.database.models.PowerPlantRow
+import com.inland24.powersim.services.powerPlants.PowerPlantResponse.Success
 import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.FlatSpec
+
+import scala.concurrent.Future
+import scala.util.Failure
 
 
 class PowerPlantConfigTest extends FlatSpec {
@@ -60,6 +64,19 @@ class PowerPlantConfigTest extends FlatSpec {
 
     // We expect 2 entries in the result
     assert(powerPlantCfg.powerPlantConfigSeq.length === 2)
+
+    // TODO: Remove this bit of code!!!
+    import scala.concurrent.ExecutionContext.Implicits.global
+    val someFuture = Future { 1+1 }.map(elem => {
+      println("mapping immediately")
+      elem.toString
+    })
+
+    someFuture.onComplete {
+      case scala.util.Success(value) => println(s"Got the callback, meaning = $value")
+      case Failure(e) => e.printStackTrace()
+    }
+
 
     powerPlantCfg.powerPlantConfigSeq.foreach {
       case cfg if cfg.powerPlantType == RampUpType =>
