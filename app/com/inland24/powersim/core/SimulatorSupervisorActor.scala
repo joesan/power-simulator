@@ -22,10 +22,11 @@ import com.inland24.powersim.actors.DBServiceActor
 import com.inland24.powersim.config.AppConfig
 import com.inland24.powersim.core.SimulatorSupervisorActor.Init
 import com.inland24.powersim.models.PowerPlantConfig
-import com.inland24.powersim.models.PowerPlantConfig.OnOffTypeConfig
+import com.inland24.powersim.models.PowerPlantConfig.{OnOffTypeConfig, RampUpTypeConfig}
 import com.inland24.powersim.models.PowerPlantEvent.{PowerPlantCreateEvent, PowerPlantDeleteEvent, PowerPlantUpdateEvent}
-import com.inland24.powersim.models.PowerPlantType.OnOffType
+import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType}
 import com.inland24.powersim.services.simulator.onOffType.OnOffTypeSimulatorActor
+import com.inland24.powersim.services.simulator.rampUpType.RampUpTypeSimulatorActor
 import monix.execution.Ack
 import monix.execution.Ack.Continue
 import monix.execution.FutureUtils.extensions._
@@ -91,11 +92,14 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
       )
       Continue
 
-    case OnOffType =>
+    case RampUpType =>
       context.actorOf(
-        OnOffTypeSimulatorActor.props(cfg.asInstanceOf[OnOffTypeConfig]),
+        RampUpTypeSimulatorActor.props(cfg.asInstanceOf[RampUpTypeConfig]),
         s"$simulatorActorNamePrefix$id"
       )
+      Continue
+
+    case _ => Continue
       Continue
   }
 

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2017 joesan @ http://github.com/joesan
  * Licensed under the Apache License, Version 2.0 (the "License");

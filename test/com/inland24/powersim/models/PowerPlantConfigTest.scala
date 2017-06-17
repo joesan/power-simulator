@@ -19,9 +19,14 @@ import com.inland24.powersim.models.PowerPlantConfig.{OnOffTypeConfig, RampUpTyp
 import com.inland24.powersim.models.PowerPlantType.{OnOffType, RampUpType, UnknownType}
 import com.inland24.powersim.services.database.models.PowerPlantRow
 import com.inland24.powersim.services.powerPlants.PowerPlantResponse.Success
+import monix.execution.{Ack, Scheduler}
+import monix.execution.Ack.Continue
+import monix.reactive.Observable
+import monix.reactive.observers.Subscriber
 import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.FlatSpec
 
+import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.Failure
 
@@ -65,18 +70,36 @@ class PowerPlantConfigTest extends FlatSpec {
     // We expect 2 entries in the result
     assert(powerPlantCfg.powerPlantConfigSeq.length === 2)
 
+    import monix.execution.Scheduler.Implicits.global
+
+    def toAdd(elem: Long) = Future { elem + 1 }
+
     // TODO: Remove this bit of code!!!
-    import scala.concurrent.ExecutionContext.Implicits.global
-    val someFuture = Future { 1+1 }.map(elem => {
-      println("mapping immediately")
+    val someFuture = Future { 1 + 1 }.map(elem => {
+      val added = toAdd(elem)
+      println(added)
+      println(elem)
       elem.toString
     })
 
-    someFuture.onComplete {
-      case scala.util.Success(value) => println(s"Got the callback, meaning = $value")
-      case Failure(e) => e.printStackTrace()
+    import scala.concurrent.duration._
+    val obs = Observable.intervalAtFixedRate(2.seconds)
+                .flatMap(_ => Observable.fromFuture(someFuture))
+
+    val subs = new Subscriber[String] {
+      override def onNext(str: String): Future[Ack] = {
+        println(s"in onNext $str")
+        Continue
+      }
+
+      override implicit def scheduler: Scheduler = monix.execution.Scheduler.Implicits.global
+
+      override def onError(ex: Throwable): Unit = ex.printStackTrace()
+
+      override def onComplete(): Unit = println("done ****")
     }
 
+    obs.subscribe(subs)
 
     powerPlantCfg.powerPlantConfigSeq.foreach {
       case cfg if cfg.powerPlantType == RampUpType =>
