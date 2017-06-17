@@ -50,7 +50,7 @@ class SimulatorSupervisorActorTest extends TestKit(ActorSystem("SimulatorSupervi
     val appCfg = loadTestAppConfig
     val dbActorRef = system.actorOf(DBServiceActor.props(appCfg.database))
 
-    // TODO: revist this test!
+    // TODO: revisit this test!
     pending
     "initialize simulator actors for all active PowerPlant's" in {
 

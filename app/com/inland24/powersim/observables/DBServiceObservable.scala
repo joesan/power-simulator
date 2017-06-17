@@ -28,7 +28,7 @@ import scala.util.{Failure, Success}
   * We are streaming data from the database table and passing it to
   * whoever that subscribes to this stream. The kind of data that we
   * stream depends on the caller and is governed by the function that
-  * he passes to the constructor
+  * he passes to the constructor.
   */
 class DBServiceObservable[T, U] private (refreshInterval: FiniteDuration, fn: => Future[T])(mapper: T => U)
   extends Observable[U] {

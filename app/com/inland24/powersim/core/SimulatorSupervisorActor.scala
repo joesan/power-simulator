@@ -76,49 +76,8 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
         SupervisorStrategy.Resume
     }
 
-  private def stopActors(events: Seq[PowerPlantDeleteEvent[PowerPlantConfig]]): Future[Ack] = async {
-    events.foreach {
-      case event => stopActor(event)
-    }
-    Continue
-  }
-
-  private def stopActor(event: PowerPlantDeleteEvent[PowerPlantConfig]): Future[Ack] = async {
-    await(fetchActor(event.powerPlantCfg.id).materialize) match {
-      case Success(actorRef) =>
-        log.info(s"Stopping Actor for PowerPlant with id = ${event.powerPlantCfg.id}")
-        context.stop(actorRef)
-        Continue
-      case Failure(fail) =>
-        log.error(s"Could not fetch Actor instance for PowerPlant =${event.powerPlantCfg.id} because of: $fail")
-        Continue
-    }
-  }
-
   private def fetchActor(id: Long): Future[ActorRef] = {
     context.actorSelection(s"$simulatorActorNamePrefix$id").resolveOne(2.seconds)
-  }
-
-  def waitForStart(source: ActorRef): Receive = {
-    case Continue =>
-      source ! Continue
-      context.become(receive)
-
-    case someShit =>
-      log.error(s"Unexpected message $someShit received while waiting for an actor to be started")
-  }
-
-  private def waitForStop(source: ActorRef, stoppedP: Promise[Continue]): Receive = {
-    case Continue =>
-      source ! Continue
-      context.become(receive)
-
-    case Terminated(actorRef) =>
-      context.unwatch(actorRef)
-      stoppedP.success(Continue)
-
-    case someShit =>
-      log.error(s"Unexpected message $someShit received while waiting for an actor to be stopped")
   }
 
   // ***********************************************************************************
@@ -166,6 +125,28 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
     }
   }
   // ***********************************************************************************
+
+  def waitForStart(source: ActorRef): Receive = {
+    case Continue =>
+      source ! Continue
+      context.become(receive)
+
+    case someShit =>
+      log.error(s"Unexpected message $someShit received while waiting for an actor to be started")
+  }
+
+  private def waitForStop(source: ActorRef, stoppedP: Promise[Continue]): Receive = {
+    case Continue =>
+      source ! Continue
+      context.become(receive)
+
+    case Terminated(actorRef) =>
+      context.unwatch(actorRef)
+      stoppedP.success(Continue)
+
+    case someShit =>
+      log.error(s"Unexpected message $someShit received while waiting for an actor to be stopped")
+  }
 
   override def receive: Receive = {
     case PowerPlantCreateEvent(id, powerPlantCfg) =>
