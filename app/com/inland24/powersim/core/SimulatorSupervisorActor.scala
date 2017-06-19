@@ -152,6 +152,37 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
       log.error(s"Unexpected message $someShit received while waiting for an actor to be stopped")
   }
 
+  sealed trait ActorState
+  case class Start(actorRef: ActorRef, promise: Promise[Continue]) extends ActorState
+  case class Restart(actorRef: ActorRef, promise: Promise[Continue])extends ActorState
+  case class Stop(actorRef: ActorRef, promise: Promise[Continue])extends ActorState
+
+  def receive1(actorUpdates: Map[ActorRef, ActorState]): Receive = {
+    case PowerPlantCreateEvent(id, powerPlantCfg) =>
+      log.info(s"Starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
+
+      // Start the PowerPlant, and pipe the message to self
+      startPowerPlant(id, powerPlantCfg).pipeTo(self)
+      context.become(waitForStart(sender())) // The sender is the SimulatorSupervisorActor
+
+    case PowerPlantUpdateEvent(id, powerPlantCfg) =>
+      log.info(s"Re-starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
+
+
+    // TODO: Stop and Re-start the actor instance
+
+    case PowerPlantDeleteEvent(id, powerPlantCfg) =>
+      log.info(s"Stopping PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
+
+      val stoppedP = Promise[Continue]()
+      async {
+        val actorRef = await(fetchActor(id))
+        val newMap = Map(actorRef -> Stop(actorRef, stoppedP)) ++ actorUpdates
+      }
+      stopPowerPlant(id, stoppedP).pipeTo(self)
+      context.become(receive1(sender(), stoppedP))
+  }
+
   override def receive: Receive = {
     case PowerPlantCreateEvent(id, powerPlantCfg) =>
       log.info(s"Starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
