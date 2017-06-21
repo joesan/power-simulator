@@ -213,11 +213,10 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
       startPowerPlant(id, powerPlantCfg).pipeTo(self)
       context.become(waitForStart(sender())) // The sender is the SimulatorSupervisorActor
 
+    // TODO: Stop and Re-start the Actor instance
     case PowerPlantUpdateEvent(id, powerPlantCfg) =>
       log.info(s"Re-starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
 
-
-    // TODO: Stop and Re-start the actor instance
     case PowerPlantDeleteEvent(id, powerPlantCfg) =>
       log.info(s"Stopping PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
 
