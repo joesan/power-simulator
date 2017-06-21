@@ -103,6 +103,30 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
       Continue
   }
 
+  private def fetchActorRef(id: Long): Future[Option[ActorRef]] = async {
+    await(fetchActor(id).materialize) match {
+      case Success(actorRef) =>
+        log.info(s"Fetched Actor for PowerPlant with id = $id")
+        Some(actorRef)
+      case Failure(fail) =>
+        log.warning(s"Unable to fetch Actor for PowerPlant with id = $id because of ${fail.getCause}")
+        None
+    }
+  }
+
+  private def timeoutPowerPlantActor(id: Long, actorRef: ActorRef, stoppedP: Promise[Continue]) = {
+    // If the Promise is not completed within 3 seconds or in other words, if we
+    // try to force Kill the actor. This will trigger an ActorKilledException which
+    // will subsequently result in a Terminated(actorRef) message being sent to this
+    // SimulatorSupervisorActor instance
+    stoppedP.future.timeout(3.seconds).recoverWith {
+      case _: TimeoutException =>
+        log.error(s"Time out waiting for PowerPlant actor $id to stop, so sending a Kill message")
+        actorRef ! Kill
+        stoppedP.future
+    }
+  }
+
   private def stopPowerPlant(id: Long, stoppedP: Promise[Continue]): Future[Ack] = async {
     await(fetchActor(id).materialize) match {
       case Success(actorRef) =>
@@ -156,8 +180,32 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
   case class Start(actorRef: ActorRef, promise: Promise[Continue]) extends ActorState
   case class Restart(actorRef: ActorRef, promise: Promise[Continue])extends ActorState
   case class Stop(actorRef: ActorRef, promise: Promise[Continue])extends ActorState
+  case class Unknown(promise: Promise[Continue]) extends ActorState
 
+  /**
+    * TODO: We do the following:
+    *
+    * Delete Event
+    * ------------
+    * 1. PowerPlantDeleteEvent is called
+    * 2. We do a context.stop
+    * 3. We set a Promise
+    */
   def receive1(actorUpdates: Map[ActorRef, ActorState]): Receive = {
+
+    /*
+     * When we get a Terminated message, we remove this ActorRef from
+     * the Map that we pass around!
+     */
+    case Terminated(actorRef) =>
+      context.unwatch(actorRef)
+      val newUpdate = if (actorUpdates.contains(actorRef)) {
+        actorUpdates - actorRef
+      } else {
+        actorUpdates
+      }
+      context.become(receive1(newUpdate))
+
     case PowerPlantCreateEvent(id, powerPlantCfg) =>
       log.info(s"Starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
 
@@ -170,17 +218,21 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
 
 
     // TODO: Stop and Re-start the actor instance
-
     case PowerPlantDeleteEvent(id, powerPlantCfg) =>
       log.info(s"Stopping PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
 
       val stoppedP = Promise[Continue]()
-      async {
-        val actorRef = await(fetchActor(id))
-        val newMap = Map(actorRef -> Stop(actorRef, stoppedP)) ++ actorUpdates
-      }
-      stopPowerPlant(id, stoppedP).pipeTo(self)
-      context.become(receive1(sender(), stoppedP))
+      fetchActorRef(id)
+        .map {
+          case Some(actorRef) =>
+            // 1. We first try to stop using context.stop
+            context.stop(actorRef)
+            context.watch(actorRef)
+            // Let's now as a fallback, Timeout the future and force kill the Actor if needed
+            timeoutPowerPlantActor(id, actorRef, stoppedP)
+
+          case _ => // TODO: Log and shit out!
+        }
   }
 
   override def receive: Receive = {
