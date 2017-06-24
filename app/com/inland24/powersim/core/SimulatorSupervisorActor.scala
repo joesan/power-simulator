@@ -58,7 +58,7 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
 
   override def preStart() = {
     super.preStart()
-    self ! Init
+    self ! Init // TODO: What do we want to do in preStart???
   }
 
   import monix.execution.Scheduler.Implicits.global
