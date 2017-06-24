@@ -185,13 +185,24 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
   /**
     * TODO: We do the following:
     *
+    * Create Event
+    * ------------
+    * 1. We check if the Actor for the given PowerPlant exists
+    * 2. If it exists, we forcefully kill it and spin up a new Actor instance
+    *
+    * Update Event
+    * ------------
+    * 1. Check for existence of the Actor for the given PowerPlant
+    * 2. If exists, stop it - asynchronously wait for the stop
+    * 3. Start a new instance of this Actor
+    *
     * Delete Event
     * ------------
     * 1. PowerPlantDeleteEvent is called
     * 2. We do a context.stop
     * 3. We set a Promise
     */
-  def receive1(actorUpdates: Map[ActorRef, ActorState]): Receive = {
+  def receive(actorUpdates: Map[ActorRef, ActorState]): Receive = {
 
     /*
      * When we get a Terminated message, we remove this ActorRef from
@@ -204,7 +215,7 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
       } else {
         actorUpdates
       }
-      context.become(receive1(newUpdate))
+      context.become(receive(newUpdate))
 
     case PowerPlantCreateEvent(id, powerPlantCfg) =>
       log.info(s"Starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
@@ -232,27 +243,6 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
 
           case _ => // TODO: Log and shit out!
         }
-  }
-
-  override def receive: Receive = {
-    case PowerPlantCreateEvent(id, powerPlantCfg) =>
-      log.info(s"Starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
-
-      // Start the PowerPlant, and pipe the message to self
-      startPowerPlant(id, powerPlantCfg).pipeTo(self)
-      context.become(waitForStart(sender())) // The sender is the SimulatorSupervisorActor
-
-    case PowerPlantUpdateEvent(id, powerPlantCfg) =>
-      log.info(s"Re-starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
-
-      // TODO: Stop and Re-start the actor instance
-
-    case PowerPlantDeleteEvent(id, powerPlantCfg) =>
-      log.info(s"Stopping PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
-
-      val stoppedP = Promise[Continue]()
-      stopPowerPlant(id, stoppedP).pipeTo(self)
-      context.become(waitForStop(sender(), stoppedP))
   }
 }
 object SimulatorSupervisorActor {
