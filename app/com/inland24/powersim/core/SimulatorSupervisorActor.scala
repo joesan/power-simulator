@@ -127,33 +127,6 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
     }
   }
 
-  private def stopPowerPlant(id: Long, stoppedP: Promise[Continue]): Future[Ack] = async {
-    await(fetchActor(id).materialize) match {
-      case Success(actorRef) =>
-        log.info(s"Stopping Actor for PowerPlant with id = $id")
-        context.watch(actorRef)
-        context.stop(actorRef)
-
-        // If the Promise is not completed within 3 seconds or in other words, if we
-        // try to force Kill the actor
-        val stopActorFallback = stoppedP.future.timeout(3.seconds).recoverWith {
-          case _: TimeoutException =>
-            log.error(
-              s"Time out waiting for PowerPlant actor $id to stop, so sending a Kill message"
-            )
-
-            actorRef ! Kill
-            stoppedP.future
-        }
-
-        await(stopActorFallback)
-      case Failure(fail) =>
-        log.error(s"Could not fetch Actor instance for PowerPlant = $id because of: $fail")
-        Continue
-    }
-  }
-  // ***********************************************************************************
-
   def waitForStart(source: ActorRef): Receive = {
     case Continue =>
       source ! Continue
@@ -161,19 +134,6 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
 
     case someShit =>
       log.error(s"Unexpected message $someShit received while waiting for an actor to be started")
-  }
-
-  private def waitForStop(source: ActorRef, stoppedP: Promise[Continue]): Receive = {
-    case Continue =>
-      source ! Continue
-      context.become(receive)
-
-    case Terminated(actorRef) =>
-      context.unwatch(actorRef)
-      stoppedP.success(Continue)
-
-    case someShit =>
-      log.error(s"Unexpected message $someShit received while waiting for an actor to be stopped")
   }
 
   sealed trait ActorState
@@ -202,7 +162,7 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
     * 2. We do a context.stop
     * 3. We set a Promise
     */
-  def receive(actorUpdates: Map[ActorRef, ActorState]): Receive = {
+  override def receive(actorUpdates: Map[ActorRef, ActorState]): Receive = {
 
     /*
      * When we get a Terminated message, we remove this ActorRef from
