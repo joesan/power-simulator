@@ -61,10 +61,6 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
     self ! Init
   }
 
-  private def selectActor(name: String) : Future[ActorRef] = {
-    context.actorSelection(name).resolveOne(2.seconds)
-  }
-
   import monix.execution.Scheduler.Implicits.global
 
   override val supervisorStrategy =
@@ -162,7 +158,7 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
     * 2. We do a context.stop
     * 3. We set a Promise
     */
-  override def receive(actorUpdates: Map[ActorRef, ActorState]): Receive = {
+  def active(actorUpdates: Map[ActorRef, ActorState]): Receive = {
 
     /*
      * When we get a Terminated message, we remove this ActorRef from
@@ -175,7 +171,7 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
       } else {
         actorUpdates
       }
-      context.become(receive(newUpdate))
+      context.become(active(newUpdate))
 
     case PowerPlantCreateEvent(id, powerPlantCfg) =>
       log.info(s"Starting PowerPlant actor with id = $id and type ${powerPlantCfg.powerPlantType}")
@@ -203,6 +199,10 @@ class SimulatorSupervisorActor(config: AppConfig) extends Actor
 
           case _ => // TODO: Log and shit out!
         }
+  }
+
+  override def receive: Receive = {
+    case Init => context.become(active(Map.empty[ActorRef, ActorState]))
   }
 }
 object SimulatorSupervisorActor {
