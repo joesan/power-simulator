@@ -61,7 +61,7 @@ run and click Run
 ### Running the application
 
 This application is built as a web application using the Play framework. To run the application,
-perform the following steps:
+perform the following steps: TODO: Descibe how to dockerize!
 
 ```
 1. Open a terminal and navigate to the project root folder 
