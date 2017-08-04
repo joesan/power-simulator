@@ -1,13 +1,38 @@
+
 language: scala
 
 jdk:
   - oraclejdk8
+  
+# Use container-based infrastructure
+sudo: false
 
+before_cache:
+  # Cleanup the cached directories to avoid unnecessary cache updates
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt        -name "*.lock"               -print -delete
+
+# These directories are cached to S3 at the end of the build
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+
+# Enabling cross building capability
 scala:
   - 2.11.7
+  - 2.11.11
+  - 2.12.2
 
 script:
   - sbt clean coverage test coverageReport
+  
+# Email specific recipient all the time
+notifications:
+  email:
+    recipients:
+      secure: "z4tdyqOCtOaicMN/ie3yk9ApCqgLPtlhbuL9OESKTXDLOC+RMfGb80BgA6Vy2HQqT2ZBU3TEcvTWdTmSm9z6RL1ou1/WAsPHDfGapFmoS/7zEEXZ2nFGyJPoaj9HTAzAWWO9thCIApg3m/TAv7pQp3Y+1jlqGTqq6rPj1qyNPRRP0Ze4QyFGjYVicXSxiv8GTa3OQ1S2jotw4is8Op5Bno271WQEIyGhtESMfpCdCAWdddAUmqp8p2TElAe/i/KxwETv92uhX7dxpYzLwva/jMlguXTGpMKYypvFzPH0/KdhDl5Bg85IlPyC25QyZ12L7RtLT+T8hkYq8u4smI2B0LVLG+LG6m96gNZBB9CM3hZKXMFnB1Lzv/43/W7+tidHJrv8arMSN5KoiaES0ulOJsSzUugGivmZqmYEWHC0rlgSVwcfoS5yL1lHcqb37jVDYSnECVt+WztAgmX94c3I354lKAm/sx6ES1mgAMewf+qEWxNvUmmRLG5ghwpcgGR0gngO8zqTF4f22Or4FTYlvz4DJDOjWkKae83o/GXM6lGgjSg8vxBTxAoDqzYzHRDJlPF5FJReIi/0X+SQ8Szzv92dQM9xZPDk5CVY0uG78boPdYq6YEiraOxRJ2twCK8ttYVyVPlazercV0+7s2Q2eWKUa2jVQBJsUIoOvLrNi2k="
+    on_success: always # default: change
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
