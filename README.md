@@ -14,7 +14,7 @@ plants:
 
 ## Dependencies
 
-[power-simulator](https://github.com/joesan/plant-simulator)
+[plant-simulator](https://github.com/joesan/plant-simulator)
 
 ## Getting Started
 
