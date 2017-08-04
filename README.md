@@ -12,10 +12,9 @@ plants:
 1. A PowerPlant that is steerable by turning it on or off (ex., battery)
 2. A PowerPlant that is steerable by ramping it up (ex., generators, gas turbines)
 
-This project has two facets:
+## Dependencies
 
-1. The simulator that simulates the operation of the above mentioned power plant types
-2. A command and control unit that is capable of sending commands to the simulator
+[power-simulator](https://github.com/joesan/plant-simulator)
 
 ## Getting Started
 
