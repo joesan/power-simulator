@@ -15,12 +15,13 @@
 
 package com.inland24.powersim.observables
 
+import com.typesafe.scalalogging.LazyLogging
 import monix.execution.Cancelable
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import monix.execution.FutureUtils.extensions._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
@@ -30,18 +31,18 @@ import scala.util.{Failure, Success}
   * stream depends on the caller and is governed by the function that
   * he passes to the constructor.
   */
-class DBServiceObservable[T, U] private (refreshInterval: FiniteDuration, fn: => Future[T])(mapper: T => U)
-  extends Observable[U] {
+class DBServiceObservable[T, U] private
+  (refreshInterval: FiniteDuration, fn: => Future[T])(mapper: T => U)(implicit ec: ExecutionContext)
+  extends Observable[U] with LazyLogging {
 
   override def unsafeSubscribeFn(subscriber: Subscriber[U]): Cancelable = {
-
-    // TODO: use passed in ExecutionContext
-    import scala.concurrent.ExecutionContext.Implicits.global
 
     def underlying = {
       val someFuture = fn.materialize.map {
         case Success(succ) => Some(succ)
-        case Failure(_) => None // TODO: log the errors!!!
+        case Failure(ex) =>
+          logger.warn(s"Unexpected error when streaming from the database :: Failure Message :: ${ex.getMessage}")
+          None
       }
 
       Observable.fromFuture(someFuture)
@@ -58,8 +59,8 @@ class DBServiceObservable[T, U] private (refreshInterval: FiniteDuration, fn: =>
 }
 object DBServiceObservable {
 
-  def powerPlantDBServiceObservable[T, U](
-    refreshInterval: FiniteDuration,
-    fn: Future[T])(mapper: T => U): DBServiceObservable[T, U] =
-    new DBServiceObservable[T, U](refreshInterval, fn)(mapper)
+  def powerPlantDBServiceObservable[T, U]
+    (refreshInterval: FiniteDuration, fn: Future[T])
+    (mapper: T => U)(implicit ec: ExecutionContext): DBServiceObservable[T, U] =
+    new DBServiceObservable[T, U](refreshInterval, fn)(mapper)(ec)
 }
